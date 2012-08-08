@@ -33,7 +33,7 @@ object Application extends Controller {
   def page(page:String) = Action {
     Ok( views.html.example() ).withHeaders(
       "Access-Control-Allow-Origin"->"*",
-      "Access-Control-Allow-Headers"->"Content-Type",
+      "Access-Control-Allow-Headers"->"origin, content-type, accept",
       "Access-Control-Allow-Methods"->"POST"
     )
   }
@@ -41,7 +41,7 @@ object Application extends Controller {
   def options = Action {
     Ok("").withHeaders( 
       "Access-Control-Allow-Origin"->"*",
-      "Access-Control-Allow-Headers"->"Content-Type",
+      "Access-Control-Allow-Headers"->"origin, content-type, accept",
       "Access-Control-Allow-Methods"->"POST"
     )
   }
