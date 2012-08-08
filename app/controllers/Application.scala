@@ -34,6 +34,10 @@ object Application extends Controller {
     Ok( views.html.example() )
   }
   
+  def options = Action {
+    Ok("").withHeaders("Access-Control-Allow-Origin"->"*")
+  }
+  
   // Serve Content via JSON API
   def content = Action { request =>
     request.body.asJson.map { json =>
