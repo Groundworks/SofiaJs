@@ -103,7 +103,7 @@ $(function(){
   var pagekey = window.location.href;
   var request = {
     location: pagekey,
-    version : "0.0.0-alpha",
+    version : "current",
   };
   
   log("Loading Page Content for: " + pagekey);
@@ -137,7 +137,7 @@ $(function(){
     url:  posturl,
     type: "POST",
     dataType: "json",
-    data: JSON.stringify({version:"0.0.0-alpha",location:"http://localhost/site"}),
+    data: JSON.stringify({version:"current",location:window.location.href}),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
       log("Json Response Containing Site-Wide Content Received")
