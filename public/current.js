@@ -2,6 +2,7 @@ var editing = false;
 var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
+var posturl = "http://sitebox.herokuapp.com/content"
 
 function newEditor(){
   var div = $("<div id='editor'>");
@@ -42,7 +43,7 @@ function saveAll(){
   
   log("Saving Updated Contents...")
   $.ajax({
-    url:  "/content",
+    url:  posturl,
     type: "POST",
     dataType: "json",
     data: JSON.stringify(request),
@@ -108,7 +109,7 @@ $(function(){
   log("Loading Page Content for: " + pagekey);
   
   $.ajax({
-    url:  "/content",
+    url:  posturl,
     type: "POST",
     dataType: "json",
     data: JSON.stringify(request),
@@ -133,7 +134,7 @@ $(function(){
 
   log("Loading Site-Wide Content");
   $.ajax({
-    url:  "/content",
+    url:  posturl,
     type: "POST",
     dataType: "json",
     data: JSON.stringify({version:"0.0.0-alpha",location:"http://localhost/site"}),
