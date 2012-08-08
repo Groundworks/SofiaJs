@@ -1,5 +1,30 @@
 html, body {
   height:100%;
+  position:relative;
+  background:white;
+}
+#editor {
+  position:absolute;
+  top:0;
+  left:0;
+  width:500px;
+  height:100%;
+  z-index:-1;
+  background:black;
+  color:white;
+  padding:10px;
+  padding-left:40px;
+}
+#editor h3 {
+  margin-top:10px;
+}
+#editor textarea {
+  width:400px;
+  height:150px;
+}
+#editor button {
+  width:50px;
+  margin-left:10px;
 }
 #console {
   font-family:monospace;
@@ -12,6 +37,64 @@ html, body {
   margin:0; 
   padding:0;
 }
+#editor-save {
+  position:absolute;
+  top:-10px;
+  left:50%;
+  padding:30px;
+  background:white;
+  border-radius:10px;
+}
+body.editing {
+  box-shadow: -5px 0px 2px rgba(255, 255, 255, 0.75);
+}
 .row {
   margin-bottom:22px;
+}
+.editable:hover {
+  background:#eee;
+}
+.editable {
+  border:1px solid #aaa;
+  position:relative;
+  z-index:1;
+  box-shadow: 5px 5px 5px #888;
+}
+.edit-label {
+  background:#888;
+  left:-1px;
+  top:0;
+  opacity:.85;
+  color:white;
+  font-weight:bold;
+  font-size:x-large;
+  padding:5px;
+  border:1px solid #888;
+  position:absolute;
+  z-index:2;
+}
+#editor h3 {
+  background:#888;
+  padding:2px;
+  margin:2px 0;
+  border-radius:5px;
+  border:1px solid #888;
+  width:404px;
+}
+#esc-to-edit {
+  background:url(/assets/images/esc-to-edit.png);
+  position:absolute;
+  top :-10px;
+  left:-10px;
+  width:194px;
+  height:194px;
+}
+#windowshade {
+  position:absolute;
+  top:0;
+  left:0;
+  z-index:0;
+  height:100%;
+  width:100%;
+  background:rgba(255,255,255,.78);
 }

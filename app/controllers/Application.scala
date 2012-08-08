@@ -3,18 +3,26 @@ package controllers
 import play.api._
 import play.api.mvc._
 import play.api.libs.json._
+import play.api.Play.current
 
 import java.net.URL
 
 object Application extends Controller {
   
-  val data = Map(
-    "#main" -> "This data has been loaded dynamically via Javascript</a>",
-    "#nav1" -> "<ul><li>One</li><li>Two</li></ul>"
-  )
+  implicit def fileToString(file:Option[java.io.File]): String = {
+    scala.io.Source.fromFile(file.get).mkString
+  }
+  
+  implicit def jsValuetoString(jsValue:JsValue):String = {
+    jsValue.as[String]
+  }
+  
+  def load(file:String) = Json.parse( Play.getExistingFile("resources/"+file+".json")  ) match {
+    case JsObject(fields) => fields . toMap . mapValues ( jsValuetoString )
+  }
   
   def index = Action {
-    Redirect("/example")
+    Redirect("/default")
   }
   
   def page(page:String) = Action {
@@ -29,10 +37,7 @@ object Application extends Controller {
         val url = new URL(location)
         val path = url.getPath()
         
-        // Insert Dynamic Content
-        val data2 = data + ("#sub1" -> ("This content is intended for the page: "+ path))
-        
-        Ok( Json.toJson(data2) )
+        Ok( Json.toJson(load(path)) )
         
       } .getOrElse {
         BadRequest("JSON Request Must Include Location Parameter")
