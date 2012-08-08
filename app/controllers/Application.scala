@@ -20,7 +20,7 @@ object Memstore {
   def load(file:String) = Json.parse( Play.getExistingFile("resources/"+file+".json")  )
   
   var pages = scala.collection.mutable.Map[String,JsObject]()
-  var site  = load("/site")
+  var sites = scala.collection.mutable.Map[String,JsObject]()
   
 }
 
@@ -50,24 +50,32 @@ object Application extends Controller {
         
         val url  = new URL(location)
         val path = url.getPath()
+        val host = url.getHost()
+        
+        val pagekey = host + "/" + path
         
         (json \ "page_content").asOpt[JsObject].map { page =>
           print("Updating Page Content")
-          Memstore.pages(path) = page
+          Memstore.pages(pagekey) = page
         }
         
         (json \ "site_content").asOpt[JsObject].map { site =>
           print("Updating Site Content")
-          Memstore.site = site
+          Memstore.sites(host) = site
         }
         
-        val page = Memstore.pages.get(path) match {
+        val site = Memstore.sites.get(host) match {
+          case Some(site) => site
+          case _ => Memstore.load("/site")
+        }
+        
+        val page = Memstore.pages.get(pagekey) match {
           case Some(page) => page
           case _ => Memstore.load("/default")
         }
         
         Ok( path match {
-          case "/site" => Json.stringify(Memstore.site)
+          case "/site" => Json.stringify(site)
           case _       => Json.stringify(page)
         }).withHeaders(
           "Access-Control-Allow-Origin"->"*",
