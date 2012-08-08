@@ -1,3 +1,3 @@
 {
-  "nav1":"This is a site-wide menu"
+  "nav1":"This is a site-wide menu. All pages will load and display the same content here.\n\n  - [Home](/default)\n  - [Killer Dolphins](/killer_dolphins)"
 }

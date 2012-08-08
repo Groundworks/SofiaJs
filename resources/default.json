@@ -1,3 +1,3 @@
 {
-  "main":"Welcome to your new _editable_ page. \n\nPages are written in markdown."
+  "main":"This page is editable! Try it.. Changes will persist in memory until a restart.\n\nYou can create new pages by simply linking to them. It's like a wiki, say have you heard about [killer dolphins](/killer_dolphins)?"
 }

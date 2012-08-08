@@ -107,7 +107,7 @@ $(function(){
     version : "0.0.0-alpha",
   };
   
-  log("Loading content for page: " + pagekey);
+  log("Loading Page Content for: " + pagekey);
   
   $.ajax({
     url:  "/content",
@@ -133,6 +133,7 @@ $(function(){
     }
   });
 
+  log("Loading Site-Wide Content");
   $.ajax({
     url:  "/content",
     type: "POST",
@@ -140,15 +141,15 @@ $(function(){
     data: JSON.stringify({version:"0.0.0-alpha",location:"http://localhost/site"}),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
-      log("Json Response Containing Content Received")
+      log("Json Response Containing Site-Wide Content Received")
       
       for(key in data){
-        log("Inserting Content into Element: "+key)
+        log("Inserting Site-Wide Content into Element: "+key)
         value = data[key];
         $("#"+key).html(converter.makeHtml(value));
       }
       
-      log("Content Loaded");
+      log("Site-Wide Content Loaded");
       
       site_content = data;
     },

@@ -13,7 +13,6 @@ object Memstore {
     scala.io.Source.fromFile(file.get).mkString
   }
   
-  
   implicit def jsValuetoString(jsValue:JsValue):String = {
     jsValue.as[String]
   }
