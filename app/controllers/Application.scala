@@ -37,7 +37,8 @@ object Application extends Controller {
   def options = Action {
     Ok("").withHeaders(
       "Access-Control-Allow-Origin"->"*",
-      "Access-Control-Allow-Headers"->"Content-Type"
+      "Access-Control-Allow-Headers"->"Content-Type",
+      "Access-Control-Allow-Methods"->"POST"
       )
   }
   
