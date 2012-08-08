@@ -16,9 +16,6 @@ html, body {
   padding:10px;
   padding-left:40px;
 }
-#editor h3 {
-  margin-top:10px;
-}
 #editor textarea {
   width:400px;
   height:150px;
@@ -61,8 +58,13 @@ body.editing {
   z-index:1;
   box-shadow: 5px 5px 5px #888;
 }
-.edit-label {
+.sitebox .edit-label {
   background:#888;
+}
+.pagebox .edit-label {
+  background:#88f;
+}
+.edit-label {
   left:-1px;
   top:0;
   opacity:.85;
@@ -75,12 +77,14 @@ body.editing {
   z-index:2;
 }
 #editor h3 {
+  margin-top:10px;
   background:#888;
   padding:2px;
+  padding-left:10px;
   margin:2px 0;
   border-radius:5px;
   border:1px solid #888;
-  width:404px;
+  width:396px;
 }
 #esc-to-edit {
   background:url(/assets/images/esc-to-edit.png);
