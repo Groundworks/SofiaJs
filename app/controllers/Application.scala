@@ -7,19 +7,25 @@ import play.api.Play.current
 
 import java.net.URL
 
-object Application extends Controller {
+object Memstore {
   
   implicit def fileToString(file:Option[java.io.File]): String = {
     scala.io.Source.fromFile(file.get).mkString
   }
   
+  
   implicit def jsValuetoString(jsValue:JsValue):String = {
     jsValue.as[String]
   }
   
-  def load(file:String) = Json.parse( Play.getExistingFile("resources/"+file+".json")  ) match {
-    case JsObject(fields) => fields . toMap . mapValues ( jsValuetoString )
-  }
+  def load(file:String) = Json.parse( Play.getExistingFile("resources/"+file+".json")  )
+  
+  var pages = scala.collection.mutable.Map[String,JsObject]()
+  var site  = load("/site")
+  
+}
+
+object Application extends Controller {
   
   def index = Action {
     Redirect("/default")
@@ -32,12 +38,31 @@ object Application extends Controller {
   // Serve Content via JSON API
   def content = Action { request =>
     request.body.asJson.map { json =>
+      
       (json \ "location").asOpt[String].map { location =>
         
-        val url = new URL(location)
+        val url  = new URL(location)
         val path = url.getPath()
         
-        Ok( Json.toJson(load(path)) )
+        (json \ "page_content").asOpt[JsObject].map { page =>
+          print("Updating Page Content")
+          Memstore.pages(path) = page
+        }
+        
+        (json \ "site_content").asOpt[JsObject].map { site =>
+          print("Updating Site Content")
+          Memstore.site = site
+        }
+        
+        val page = Memstore.pages.get(path) match {
+          case Some(page) => page
+          case _ => Memstore.load("/default")
+        }
+        
+        path match {
+          case "/site" => Ok( Json.stringify(Memstore.site) )
+          case _       => Ok( Json.stringify(page) )
+        }
         
       } .getOrElse {
         BadRequest("JSON Request Must Include Location Parameter")

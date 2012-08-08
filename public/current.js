@@ -11,7 +11,7 @@ function newEditor(){
   for(key in page_content){
     (function(id){
     div.append( $("<h3>").text(key), 
-                $("<textarea id='"+key+"-editor'>").text(page_content[key]).keypress(function(event){
+                $("<textarea id='"+key+"-editor'>").text(page_content[key]).keyup(function(event){
                   var value = this.value;
                   $("#"+id).html(converter.makeHtml(value));
                   page_content[id] = value;
@@ -24,7 +24,7 @@ function newEditor(){
   for(key in site_content){
     (function(id){
     div.append( $("<h3>").text(key), 
-                $("<textarea id='"+key+"-editor'>").text(site_content[key]).keypress(function(event){
+                $("<textarea id='"+key+"-editor'>").text(site_content[key]).keyup(function(event){
                   var value = this.value;
                   $("#"+id).html(converter.makeHtml(value));
                   site_content[id] = value;
@@ -33,6 +33,31 @@ function newEditor(){
   }
   
   return div;
+}
+
+function saveAll(){
+  var request = {
+    location:window.location.href,
+    page_content:page_content,
+    site_content:site_content
+  }
+  
+  log("Saving Updated Contents...")
+  $.ajax({
+    url:  "/content",
+    type: "POST",
+    dataType: "json",
+    data: JSON.stringify(request),
+    contentType: "application/json; charset=utf-8",
+    success:function(data, textStatus, jqXHR){
+      log("Contents Saved");
+    },
+    error:function(jqXHR, textStatus, errorThrown){
+      log("Not Saved");
+    }
+  });
+  
+  
 }
 
 function toggleEdit(){
@@ -46,6 +71,7 @@ function toggleEdit(){
       $("#editor").remove();
     });
     $(".edit-label").remove();
+    saveAll();
     editing = false;
   }else{
     $("body").addClass("editing");
