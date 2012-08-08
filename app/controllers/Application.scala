@@ -25,21 +25,25 @@ object Memstore {
 }
 
 object Application extends Controller {
-  
+    
   def index = Action {
     Redirect("/default")
   }
   
   def page(page:String) = Action {
-    Ok( views.html.example() )
-  }
-  
-  def options = Action {
-    Ok("").withHeaders(
+    Ok( views.html.example() ).withHeaders(
       "Access-Control-Allow-Origin"->"*",
       "Access-Control-Allow-Headers"->"Content-Type",
       "Access-Control-Allow-Methods"->"POST"
-      )
+    )
+  }
+  
+  def options = Action {
+    Ok("").withHeaders( 
+      "Access-Control-Allow-Origin"->"*",
+      "Access-Control-Allow-Headers"->"Content-Type",
+      "Access-Control-Allow-Methods"->"POST"
+    )
   }
   
   // Serve Content via JSON API
