@@ -55,12 +55,10 @@ object Application extends Controller {
         val pagekey = host + "/" + path
         
         (json \ "page_content").asOpt[JsObject].map { page =>
-          print("Updating Page Content")
           Memstore.pages(pagekey) = page
         }
         
         (json \ "site_content").asOpt[JsObject].map { site =>
-          print("Updating Site Content")
           Memstore.sites(host) = site
         }
         
@@ -74,16 +72,20 @@ object Application extends Controller {
           case _ => Memstore.load("/default")
         }
         
-        Ok( path match {
-          case "/site" => Json.stringify(site)
-          case _       => Json.stringify(page)
-        }).withHeaders(
-          "Access-Control-Allow-Origin"->"*",
-          "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-          "Access-Control-Allow-Methods"->"POST"
-        )
+        (json \ "content").asOpt[String].map { content=>
+          Ok( content match {
+            case "site" => Json.stringify(site)
+            case _      => Json.stringify(page)
+          }).withHeaders(
+            "Access-Control-Allow-Origin"->"*",
+            "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
+            "Access-Control-Allow-Methods"->"POST"
+          )
+        }.getOrElse{
+          BadRequest("JSON Request Must Include Content Type")
+        }
         
-      } .getOrElse {
+      }.getOrElse {
         BadRequest("JSON Request Must Include Location Parameter")
       }
     }.getOrElse {

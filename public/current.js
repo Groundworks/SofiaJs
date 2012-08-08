@@ -104,6 +104,7 @@ $(function(){
   var request = {
     location: pagekey,
     version : "current",
+    content : "page"
   };
   
   log("Loading Page Content for: " + pagekey);
@@ -137,7 +138,11 @@ $(function(){
     url:  posturl,
     type: "POST",
     dataType: "json",
-    data: JSON.stringify({version:"current",location:window.location.href}),
+    data: JSON.stringify({
+      version :"current",
+      location:window.location.href,
+      content :"site"
+    }),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
       log("Json Response Containing Site-Wide Content Received")
