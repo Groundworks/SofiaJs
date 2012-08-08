@@ -8,29 +8,27 @@ function newEditor(){
   
   div.append($("<h2>Page Content</h2>"));
   
-  for(key in page_content){
-    (function(id){
+  $(".pagebox").each(function(index,item){
+    var key = $(item).attr('id');
     div.append( $("<h3>").text(key), 
                 $("<textarea id='"+key+"-editor'>").text(page_content[key]).keyup(function(event){
                   var value = this.value;
-                  $("#"+id).html(converter.makeHtml(value));
-                  page_content[id] = value;
+                  $("#"+key).html(converter.makeHtml(value));
+                  page_content[key] = value;
                 }));
-                })(key);
-  }
+  });
   
   div.append($("<h2>Site Wide Content</h2>"));
   
-  for(key in site_content){
-    (function(id){
+  $(".sitebox").each(function(index,item){
+    var key = $(item).attr('id');
     div.append( $("<h3>").text(key), 
                 $("<textarea id='"+key+"-editor'>").text(site_content[key]).keyup(function(event){
                   var value = this.value;
-                  $("#"+id).html(converter.makeHtml(value));
-                  site_content[id] = value;
+                  $("#"+key).html(converter.makeHtml(value));
+                  site_content[key] = value;
                 }));
-                })(key);
-  }
+  });
   
   return div;
 }
@@ -77,7 +75,7 @@ function toggleEdit(){
     $("body").addClass("editing");
     $("html").append( newEditor() );
     $("body").append("<div id='windowshade' style='opacity:0' onclick='toggleEdit();'>&nbsp;</div>");
-    $(".sitebox").each(function(index,item){
+    $(".sitebox,.pagebox").each(function(index,item){
       $(item).css("position", "relative");
       $(item).append($("<div class='edit-label'>").text( $(item).attr('id') ));
     }).addClass("editable");
