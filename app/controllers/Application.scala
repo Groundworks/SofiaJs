@@ -31,17 +31,13 @@ object Application extends Controller {
   }
   
   def page(page:String) = Action {
-    Ok( views.html.example() ).withHeaders(
-      "Access-Control-Allow-Origin"->"*",
-      "Access-Control-Allow-Headers"->"origin, content-type, accept",
-      "Access-Control-Allow-Methods"->"POST"
-    )
+    Ok( views.html.example() )
   }
   
   def options = Action {
     Ok("").withHeaders( 
       "Access-Control-Allow-Origin"->"*",
-      "Access-Control-Allow-Headers"->"origin, content-type, accept",
+      "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
       "Access-Control-Allow-Methods"->"POST"
     )
   }
@@ -70,10 +66,14 @@ object Application extends Controller {
           case _ => Memstore.load("/default")
         }
         
-        path match {
-          case "/site" => Ok( Json.stringify(Memstore.site) )
-          case _       => Ok( Json.stringify(page) )
-        }
+        Ok( path match {
+          case "/site" => Json.stringify(Memstore.site)
+          case _       => Json.stringify(page)
+        }).withHeaders(
+          "Access-Control-Allow-Origin"->"*",
+          "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
+          "Access-Control-Allow-Methods"->"POST"
+        )
         
       } .getOrElse {
         BadRequest("JSON Request Must Include Location Parameter")
