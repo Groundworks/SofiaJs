@@ -1,42 +1,29 @@
 <!DOCTYPE html>
+<!-- HTML5 lets us omit unnecessary tags -->
+
 <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.css"/>
 <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap-responsive.min.css"/>
-<style>
-  html, body {
-    height:100%;
-  }
-  #console {
-    font-family:monospace;
-    background:rgba(0,0,0,.8);
-    color:white;
-    padding:10px;
-    border-radius:5px;
-  }
-  #console p {
-    margin:0; 
-    padding:0;
-  }
-  .row {
-    margin-bottom:22px;
-  }
-</style>
+<link rel="stylesheet" href="/assets/stylesheets/main.css">
+
+<!-- Some Twitter Bootstrap Boilerplate -->
 <div class="container">
 
   <div class="hero-unit">
   <h1>Hello World</h1>
   </div>
-
+  
+  <!-- Content will be added via javascript -->
   <div class="row">
   <div class="span4" id="nav1"></div>
   <div class="span8" id="main"></div>
   </div>
-  
   <div class="row">
   <div class="span12">
     <div id="sub1"></div>
   </div>
   </div>
 
+  <!-- Console Shows Log Output -->
   <div class="row">
     <div class="span12">
       <div id="console">

@@ -1,0 +1,17 @@
+html, body {
+  height:100%;
+}
+#console {
+  font-family:monospace;
+  background:rgba(0,0,0,.8);
+  color:white;
+  padding:10px;
+  border-radius:5px;
+}
+#console p {
+  margin:0; 
+  padding:0;
+}
+.row {
+  margin-bottom:22px;
+}
