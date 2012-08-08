@@ -35,7 +35,10 @@ object Application extends Controller {
   }
   
   def options = Action {
-    Ok("").withHeaders("Access-Control-Allow-Origin"->"*")
+    Ok("").withHeaders(
+      "Access-Control-Allow-Origin"->"*",
+      "Access-Control-Allow-Headers"->"Content-Type"
+      )
   }
   
   // Serve Content via JSON API
