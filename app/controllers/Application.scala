@@ -77,6 +77,8 @@ object Application extends Controller {
         
         val pagekey = host + path
         
+        // Save Incoming Data //
+        
         (json \ "page_content").asOpt[JsObject].map { page =>
           println("Saving Page Data for: " + host)
           Memstore.setData(pagekey,page)
@@ -86,6 +88,8 @@ object Application extends Controller {
           println("Saving Site Data for: " + host)
           Memstore.setData(host,site)
         }
+        
+        // Get Data //
         
         val site = Memstore.getData(host) match {
           case Some(site:String) => 
