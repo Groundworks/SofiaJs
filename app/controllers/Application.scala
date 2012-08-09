@@ -1,9 +1,13 @@
 package controllers
 
+import anorm._
+import anorm.SqlParser._
+
 import play.api._
 import play.api.mvc._
 import play.api.libs.json._
 import play.api.Play.current
+import play.api.db._
 
 import java.net.URL
 
@@ -17,7 +21,31 @@ object Memstore {
     jsValue.as[String]
   }
   
-  def load(file:String) = Json.parse( Play.getExistingFile("resources/"+file+".json")  )
+  def load(file:String) = {
+    Json.parse( Play.getExistingFile("resources/"+file+".json") )
+  }
+  
+  def getData(file:String): Option[String] = {
+    print("\nfile: "+file)
+    DB.withConnection { implicit connection => 
+      print("\nPage Key: "+file)
+      SQL("""
+        SELECT content FROM page WHERE pagekey={pagekey}
+        """).on("pagekey"->file).as( str("content") singleOpt )
+    }
+  }
+  
+  def setData(file:String,jsObject:JsObject) = {
+    DB.withConnection { implicit connection => 
+      SQL("DELETE from page WHERE pagekey={pagekey}").on("pagekey"->file).execute()
+      SQL("""
+        INSERT INTO page (pagekey,content) VALUES ({pagekey},{content})
+        """).on(
+          "pagekey" -> file,
+          "content" -> Json.stringify(jsObject)
+        ).executeInsert()
+      }
+  }
   
   var pages = scala.collection.mutable.Map[String,JsObject]()
   var sites = scala.collection.mutable.Map[String,JsObject]()
@@ -25,7 +53,7 @@ object Memstore {
 }
 
 object Application extends Controller {
-    
+  
   def index = Action {
     Redirect("/default")
   }
@@ -52,30 +80,32 @@ object Application extends Controller {
         val path = url.getPath()
         val host = url.getHost()
         
-        val pagekey = host + "/" + path
+        val pagekey = host + path
         
         (json \ "page_content").asOpt[JsObject].map { page =>
           Memstore.pages(pagekey) = page
+          Memstore.setData(pagekey,page)
         }
         
         (json \ "site_content").asOpt[JsObject].map { site =>
           Memstore.sites(host) = site
+          Memstore.setData(host,site)
         }
         
-        val site = Memstore.sites.get(host) match {
-          case Some(site) => site
-          case _ => Memstore.load("/site")
+        val site = Memstore.getData(host) match {
+          case Some(site:String) => site
+          case _ => Json.stringify(Memstore.load("/site"))
         }
         
-        val page = Memstore.pages.get(pagekey) match {
-          case Some(page) => page
-          case _ => Memstore.load("/default")
+        val page = Memstore.getData(pagekey) match {
+          case Some(page:String) => page
+          case _ => Json.stringify(Memstore.load("/default"))
         }
         
         (json \ "content").asOpt[String].map { content=>
           Ok( content match {
-            case "site" => Json.stringify(site)
-            case _      => Json.stringify(page)
+            case "site" => site
+            case _      => page
           }).withHeaders(
             "Access-Control-Allow-Origin"->"*",
             "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
