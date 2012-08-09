@@ -33,11 +33,11 @@ object Memstore {
     }
   }
   
-  def setData(file:String,jsObject:JsObject) = {
+  def setData(file:String,jsObject:JsObject) {
     DB.withConnection { implicit connection => 
       SQL("DELETE from page WHERE pagekey={pagekey}").on("pagekey"->file).execute()
       SQL("""
-        INSERT INTO page (pagekey,content) VALUES ({pagekey},{content})
+        INSERT INTO page (content,pagekey) VALUES ({content},{pagekey})
         """).on(
           "pagekey" -> file,
           "content" -> Json.stringify(jsObject)
@@ -84,7 +84,7 @@ object Application extends Controller {
           Memstore.setData(pagekey,page)
         }
         
-        (json \ "site_content").asOpt[JsObject].map { site =>
+        (json \ "site_content").asOpt[JsObject].map { site:JsObject =>
           println("Saving Site Data for: " + host)
           Memstore.setData(host,site)
         }
