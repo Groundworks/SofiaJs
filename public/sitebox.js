@@ -2,7 +2,7 @@ var editing = false;
 var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
-var posturl = "/content"
+var posturl = "http://sitebox.herokuapp.com/content"
 
 function newEditor(){
   var div = $("<div id='editor'>");
