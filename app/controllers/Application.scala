@@ -26,9 +26,7 @@ object Memstore {
   }
   
   def getData(file:String): Option[String] = {
-    print("\nfile: "+file)
     DB.withConnection { implicit connection => 
-      print("\nPage Key: "+file)
       SQL("""
         SELECT content FROM page WHERE pagekey={pagekey}
         """).on("pagekey"->file).as( str("content") singleOpt )
@@ -46,9 +44,6 @@ object Memstore {
         ).executeInsert()
       }
   }
-  
-  var pages = scala.collection.mutable.Map[String,JsObject]()
-  var sites = scala.collection.mutable.Map[String,JsObject]()
   
 }
 
@@ -83,22 +78,26 @@ object Application extends Controller {
         val pagekey = host + path
         
         (json \ "page_content").asOpt[JsObject].map { page =>
-          Memstore.pages(pagekey) = page
+          println("Saving Page Data for: " + host)
           Memstore.setData(pagekey,page)
         }
         
         (json \ "site_content").asOpt[JsObject].map { site =>
-          Memstore.sites(host) = site
+          println("Saving Site Data for: " + host)
           Memstore.setData(host,site)
         }
         
         val site = Memstore.getData(host) match {
-          case Some(site:String) => site
+          case Some(site:String) => 
+            println("Loaded Existing Site Data for: " + host)
+            site
           case _ => Json.stringify(Memstore.load("/site"))
         }
         
         val page = Memstore.getData(pagekey) match {
-          case Some(page:String) => page
+          case Some(page:String) => 
+            println("Loaded Existing Page Data for: " + host)
+            page
           case _ => Json.stringify(Memstore.load("/default"))
         }
         
