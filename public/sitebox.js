@@ -162,8 +162,6 @@ $(function(){
     }
   });
   
-  $("body").append($("<div id='esc-to-edit'>&nbsp;</div>"));
-  
 });
 
 $(document).keyup(function(e) {
