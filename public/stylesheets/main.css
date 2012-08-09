@@ -5,16 +5,26 @@ html, body {
   height:100%;
   background:white;
 }
+#editor-frame {
+  background: black;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 500px;
+  z-index: -2;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
 #editor {
   position:absolute;
   top:0;
   width:500px;
-  height:100%;
   z-index:-1;
-  background:black;
   color:white;
-  padding:10px;
+  padding-top:50px;
   padding-left:40px;
+  padding-bottom:200px;
 }
 #editor textarea {
   width:400px;
@@ -44,7 +54,7 @@ html, body {
   border-radius:10px;
 }
 body.editing {
-  box-shadow: -5px 0px 2px rgba(255, 255, 255, 0.75);
+  
 }
 .row {
   margin-bottom:22px;
