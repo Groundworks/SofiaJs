@@ -13,4 +13,5 @@ POST    /cred                       controllers.Application.cred
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /current.js                 controllers.Application.current
 GET     /*default                   controllers.Application.page(default)

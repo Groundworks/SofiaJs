@@ -49,6 +49,10 @@ object Memstore {
 
 object Application extends Controller {
   
+  def current = Action {
+    Assets.at(path="/public", "current.js")
+  }
+  
   val masterCredential = "0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf";
   
   def cred = Action { request =>
