@@ -5,6 +5,7 @@ var drawerIsOpen = false;
 var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
+var push_notification;
 
 function pushToMain(){
   getCredential(function(credential){
@@ -149,7 +150,7 @@ function saveAll(){
   }
   
   var percent = 0;
-  var notice = $.pnotify({
+  push_notification = $.pnotify({
     title: "Saving...",
     type: 'info',
     icon: 'picon picon-throbber',
@@ -201,11 +202,11 @@ function saveAll(){
                        <div style='margin-top:5px; text-align:right;'> \
                        </div>";
       
-      notice.pnotify(success);
+      push_notification.pnotify(success);
     },
     error:function(jqXHR, textStatus, errorThrown){
       log("Not Saved");
-      notice.pnotify(failure);
+      push_notification.pnotify(failure);
     }
   });
 }
@@ -224,7 +225,10 @@ function drawerClose(){
   drawerIsOpen = false;
 }
 
-function drawerOpen(){  
+function drawerOpen(){
+  
+  if(push_notification){push_notification.pnotify_remove();}
+  
   $("body").append("<div id='windowshade' style='opacity:0' onclick='toggleEdit();'>&nbsp;</div>");
   $(".sitebox,.pagebox").each(function(index,item){
     $(item).css("position", "relative");
