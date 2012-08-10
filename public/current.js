@@ -1,3 +1,5 @@
+var posturl = siteboxhost + "/content"
+
 function includeCss(cssFilePath) {
     var css = document.createElement("link");
 
