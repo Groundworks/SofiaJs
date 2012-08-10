@@ -1,4 +1,3 @@
-var posturl = siteboxhost + "/content"
 var updateurl = siteboxhost + "/update";
 var posturl = siteboxhost + "/content";
 
@@ -19,8 +18,5 @@ function includeJs(jsFilePath) {
 
     document.body.appendChild(js);
 }
-includeCss("http://sitebox.herokuapp.com/assets/stylesheets/main.css");
-
-includeJs("https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js");
-includeJs("http://sitebox.herokuapp.com/assets/javascripts/showdown.js");
-includeJs("http://sitebox.herokuapp.com/assets/sitebox.js");
+includeCss(siteboxhost+"/assets/stylesheets/main.css");
+includeJs(siteboxhost+"/assets/sitebox.js");
