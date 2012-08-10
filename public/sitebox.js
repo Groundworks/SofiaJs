@@ -151,6 +151,11 @@ function saveAll(){
     credential:credential,
     location:window.location.href,
     page_content:page_content,
+  }
+  
+  var site_request = {
+    credential:credential,
+    location:window.location.href,
     site_content:site_content
   }
   
@@ -195,25 +200,47 @@ function saveAll(){
     data: JSON.stringify(request),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
-      log("Contents Saved");
-      window.location.hash = data["hashbang"];
-      
-      success.text  = "<p>Your changes has been saved but will not \
-                       appear as the main version at:\
-                       <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
-                       You must <button onclick='pushToMain()'>Push Changes</button></p> \
-                       <p style='word-wrap:break-word;'>The current version is accessible any time at:\
-                       <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
-                       <div style='margin-top:5px; text-align:right;'> \
-                       </div>";
-      
-      push_notification.pnotify(success);
+      var good = function(){
+        log("Contents Saved");
+        window.location.hash = data["hashbang"];
+
+        success.text  = "<p>Your changes has been saved but will not \
+                         appear as the main version at:\
+                         <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
+                         You must <button onclick='pushToMain()'>Push Changes</button></p> \
+                         <p style='word-wrap:break-word;'>The current version is accessible any time at:\
+                         <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
+                         <div style='margin-top:5px; text-align:right;'> \
+                         </div>";
+
+        push_notification.pnotify(success);
+      }
+      if(siteEditorDirty){
+        $.ajax({
+          url: siteboxhost + "/site",
+          type: "POST",
+          dataType: "json",
+          data: JSON.stringify(site_request),
+          contentType: "application/json; charset=utf-8",
+          success:function(data,textStatus,jqXHR){
+            good();
+          },
+          error:function(jqXHR,textStatus,errorThrown){
+            log("Error");
+            push_notification.pnotify(failure);
+          }
+        });
+      }else{
+        good();
+      }
     },
     error:function(jqXHR, textStatus, errorThrown){
       log("Not Saved");
       push_notification.pnotify(failure);
     }
   });
+  
+  
 }
 
 function drawerClose(){

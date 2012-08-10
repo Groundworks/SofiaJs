@@ -180,16 +180,32 @@ object Application extends Controller {
     }.getOrElse{BadRequest("")}
   }
   
+  def site = Action { request => 
+    println("Updating Site Data")
+    request.body.asJson.map { json => 
+      (json \ "location").asOpt[String].map { location => 
+        
+        val url  = new URL(location)
+        val path = url.getPath()
+        val host = url.getHost()
+        
+        (json \ "site_content").asOpt[JsObject].map{siteContent=>
+          Memstore.setData(host,Json.stringify(siteContent))
+          Ok("{}")
+        }.getOrElse(BadRequest("Missing site_content in JSON Request"))
+      }.getOrElse(BadRequest("Missing 'site' Parameter in JSON Request"))
+    }.getOrElse(BadRequest("Site Action Expecting JSON"))
+  }
+  
   // Serve Content via JSON API
   def update = Action { request =>
     request.body.asJson.map { json =>
       
       (json \ "location").asOpt[String].map { location =>
         
-        val pageContent = (json \ "page_content").asOpt[JsObject].map{page=>Json.stringify(page)}.getOrElse{"{}"}
-        val siteContent = (json \ "site_content").asOpt[JsObject].map{site=>Json.stringify(site)}.getOrElse{"{}"}
+        val pageContent = (json \ "page_content").asOpt[JsObject].map{page=>Json.stringify(page)}
         
-        var hash = MessageDigest.getInstance("SHA1").digest((pageContent+siteContent).getBytes).map("%02X".format(_)).mkString
+        var hash = MessageDigest.getInstance("SHA1").digest((pageContent.getOrElse{""}).getBytes).map("%02X".format(_)).mkString
         
         val url  = new URL(location)
         val path = url.getPath()
@@ -205,8 +221,7 @@ object Application extends Controller {
           if (credential==masterCredential){
             println("Credential Received is Valid - Saving Data")
             
-            Memstore.setData(pagekey,pageContent)
-            Memstore.setData(host   ,siteContent)
+            pageContent.map{ x => Memstore.setData(pagekey,x) }
             
             Ok("""{"hashbang":"%s"}""" format hash).withHeaders("Content-Type"->"application/json")
             
