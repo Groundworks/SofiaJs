@@ -49,6 +49,25 @@ object Memstore {
 
 object Application extends Controller {
   
+  def cred = Action { request =>
+    println(request)
+    val response = """{
+      "response":"ok",
+      "credential":"0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf"
+    }"""
+    Ok(response)
+  }
+  
+  def auth = Action { request =>
+    println(request)
+    val response = """{
+      "response":"ok",
+      "role":"editor",
+      "access":"092j3f023f0f9j1f0h138fda0fj93jf290jf238fa80f32"
+    }"""
+    Ok(response)
+  }
+  
   def index = Action {
     Redirect("/default")
   }
