@@ -10,6 +10,29 @@ var push_notification;
 var pageEditorDirty;
 var siteEditorDirty;
 
+function pullRequest(){
+  getCredential(function(credential){
+    $.ajax({
+      url: siteboxhost+"/pullrequest",
+      type: "POST",
+      dataType: "json",
+      data: JSON.stringify({
+        location  : window.location.href,
+        credential:credential
+      }),
+      contentType: "application/json; charset=utf-8",
+      success:function(data, textStatus, jqXHR){
+        $.pnotify({'title':'Success','text':'Pull Request Complete',type:'success'});
+      },
+      error:function(jqXHR, textStatus, errorThrown){
+        $.pnotify({'title':'Success','text':'Error Submitting Pull Request',type:'error'});
+      }
+    });
+  },function(){
+    // error
+  });
+}
+
 function pushToMain(){
   getCredential(function(credential){
     $.ajax({
@@ -84,6 +107,32 @@ function ajaxLogin(){
   });
 }
 
+function guestLogin(){
+  $.ajax({
+    url: credentialUrl,
+    type: "POST",
+    dataType: "json",
+    data: JSON.stringify({
+      email : "guest",
+      paswd : ""
+    }),
+    contentType: "application/json; charset=utf-8",
+    success:function(data, textStatus, jqXHR){
+      var response = data["response"];
+      if(response=="ok"){
+        $("#sitebox-login-form").remove();
+        $("#editor-frame").append(newEditor());
+        drawerIsOpen = true;
+        var credential = data["credential"];
+        localStorage.setItem("sitebox-credentials",credential);
+      } else {
+        alert("Login Fail");
+      }
+      
+    }
+  });
+}
+
 function newLogin(){
   var form  = $("<form id='sitebox-login-form'>");
   var title = $("<h3>Please Login to Edit</h3>");
@@ -92,14 +141,15 @@ function newLogin(){
   var email = $("<input type='text' id='sitebox-login-email'/><br/>");
   var pwlab = $("<label>Password</label>");
   var paswd = $("<input type='password' id='sitebox-login-pass'/><br/>");
-  var button = $("<input type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Login'/><br/>");
+  var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Login'/>");
+  var guest  = $("<input style='display:inline;' id='guest-login-button' type='button' onclick='guestLogin()' value='Guest Login'/>");
   paswd.keyup(function(event){
       if(event.keyCode == 13){
           $("#sitebox-login-button").click();
           $("#sitebox-login-email").select();
       }
   });
-  form.append(title,hr,emlab,email,pwlab,paswd,button);
+  form.append(title,hr,emlab,email,pwlab,paswd,button,guest);
   return form;
 }
 
@@ -203,16 +253,32 @@ function saveAll(){
       var good = function(){
         log("Contents Saved");
         window.location.hash = data["hashbang"];
-
-        success.text  = "<p>Your changes has been saved but will not \
-                         appear as the main version at:\
-                         <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
-                         You must <button onclick='pushToMain()'>Push Changes</button></p> \
-                         <p style='word-wrap:break-word;'>The current version is accessible any time at:\
-                         <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
-                         <div style='margin-top:5px; text-align:right;'> \
-                         </div>";
-
+        var role = data["role"];
+        
+        console.log(data);
+        
+        if(role=="push"){
+          success.text  = "<p>Your changes has been saved but will not \
+                           appear as the main version at:\
+                           <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
+                           You must <button onclick='pushToMain()'>Push Changes</button></p> \
+                           <p style='word-wrap:break-word;'>The current version is accessible any time at:\
+                           <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
+                           <div style='margin-top:5px; text-align:right;'> \
+                           </div>";
+        } else if (role=="pull-request-only") {
+          success.text  = "<p>Your changes has been saved but will not \
+                           appear as the main version at:\
+                           <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
+                           You must request the owner to <button onclick='pullRequest()'>Pull Changes</button></p> \
+                           <p style='word-wrap:break-word;'>The current version is accessible any time at:\
+                           <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
+                           <div style='margin-top:5px; text-align:right;'> \
+                           </div>";
+        } else {
+          alert("Error 923847");
+        }
+        
         push_notification.pnotify(success);
       }
       pageEditorDirty = false;

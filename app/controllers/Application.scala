@@ -27,6 +27,23 @@ object Memstore {
     Json.parse( Play.getExistingFile("resources/"+file+".json") )
   }
   
+  def setPullRequest(file:String){
+    println("Pull Request Submitted for: "+file)
+    DB.withConnection { implicit connection => 
+      removePullRequest(file)
+      SQL("""
+        INSERT INTO pullrequest (pagekey) VALUES ({pagekey})
+        """).on("pagekey"->file).executeInsert();
+    }
+  }
+  
+  def removePullRequest(file:String){
+    println("Pull Request Resolved for: "+file)
+    DB.withConnection { implicit connection => 
+      SQL("DELETE from pullrequest WHERE pagekey={pagekey}").on("pagekey"->file).execute()
+    }
+  }
+  
   def getData(file:String): Option[String] = {
     DB.withConnection { implicit connection => 
       SQL("""
@@ -55,7 +72,8 @@ object Application extends Controller {
     Assets.at(path="/public", "current.js")
   }
   
-  val masterCredential = "0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf";
+  val masterCredential = "0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf"
+  val guestCredential = "039jf029jf2039fj0jf0a8jf0asnf0823nf023"
   
   def cred = Action { request =>
     request.body.asJson.map { json =>
@@ -68,6 +86,11 @@ object Application extends Controller {
               "response":"ok",
               "credential":"%s"
             }""" format ( masterCredential )
+          } else if(email=="guest") {
+            response = """{
+              "response":"ok",
+              "credential":"%s"
+            }""" format ( guestCredential )
           } else {
             response = """{
               "response":"fail"
@@ -161,6 +184,23 @@ object Application extends Controller {
     }
   }
   
+  def pullrequest = Action { request => 
+    request.body.asJson.map { json => 
+      (json \ "location").asOpt[String].map { location => 
+        
+        val hash = (json \ "hash").asOpt[String].getOrElse{""}
+        val url  = new URL(location)
+        val path = url.getPath()
+        val host = url.getHost()
+        
+        Memstore.setPullRequest(location)
+        
+        Ok( """{"message":"Pull Request Submitted"}""" )
+        
+      }.getOrElse{BadRequest("")}
+    }.getOrElse{BadRequest("")}
+  }
+  
   def push = Action { request =>
     request.body.asJson.map { json => 
       (json \ "location").asOpt[String].map { location => 
@@ -172,6 +212,8 @@ object Application extends Controller {
           if(credential==masterCredential){
             Memstore.setData(host+path,Memstore.getData(host+path+hash).get)
             Ok("")
+          }else if(credential==guestCredential){
+            BadRequest("")
           }else{
             BadRequest("")
           }
@@ -218,12 +260,21 @@ object Application extends Controller {
         (json \ "credential").asOpt[String].map { credential => 
           println("Credentials Received")
           // Check Credentials Here //
-          if (credential==masterCredential){
+          if (credential==masterCredential||credential==guestCredential){
             println("Credential Received is Valid - Saving Data")
             
             pageContent.map{ x => Memstore.setData(pagekey,x) }
             
-            Ok("""{"hashbang":"%s"}""" format hash).withHeaders("Content-Type"->"application/json")
+            val role = if(credential==masterCredential){
+              "push"
+            } else {
+              "pull-request-only"
+            }
+            
+            Ok("""{
+                   "hashbang":"%s",
+                   "role":"%s"
+                  }""" format (hash,role)).withHeaders("Content-Type"->"application/json")
             
           } else {
             // Fail Credentials
