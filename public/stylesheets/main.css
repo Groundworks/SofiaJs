@@ -36,7 +36,10 @@ html, body {
   width:400px;
   height:150px;
 }
-#editor button {
+#sitebox-logout-button {
+  
+}
+#sitebox-login-button {
   width:50px;
   margin-left:10px;
 }

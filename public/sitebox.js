@@ -6,6 +6,12 @@ var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
 
+function logout(){
+  localStorage.removeItem("sitebox-credentials");
+  drawerClose();
+  editing=false;
+}
+
 var credentialUrl = siteboxhost + "/cred"
 function getCredential( onSuccess, onFailure ){
   // get credentials from store or login
@@ -58,6 +64,7 @@ function newLogin(){
   paswd.keyup(function(event){
       if(event.keyCode == 13){
           $("#sitebox-login-button").click();
+          $("#sitebox-login-email").select();
       }
   });
   form.append(title,hr,emlab,email,pwlab,paswd,button);
@@ -67,6 +74,7 @@ function newLogin(){
 function newEditor(){
   
   var div = $("<div id='editor'>");
+  div.append($("<button id='editor-logout-button' onclick='logout();'>Log Out</button>"));
   
   div.append($("<h2>Page Content</h2>"));
   
@@ -134,6 +142,7 @@ function drawerClose(){
   });
   $(".edit-label").remove();
   editing = false;
+  drawerIsOpen = false;
 }
 
 function drawerOpen(){
@@ -152,6 +161,7 @@ function drawerOpen(){
   }, 500, function() {
     // Body Animation complete.
   });
+  drawerIsOpen = true;
 }
 
 function toggleEdit(){
@@ -160,7 +170,6 @@ function toggleEdit(){
       saveAll();
     }
     drawerClose();
-    drawerIsOpen = false;
   }else{
     $("body").addClass("editing");
     var frame = $("<div id='editor-frame'>");
@@ -173,7 +182,6 @@ function toggleEdit(){
       drawerOpen();
       $("#sitebox-login-email").select();
     });
-    drawerIsOpen = true;
   }
 }
 

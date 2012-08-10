@@ -1,3 +1,4 @@
+var siteboxhost = "http://sitebox.herokuapp.com";
 var updateurl = siteboxhost + "/update";
 var posturl = siteboxhost + "/content";
 

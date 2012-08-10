@@ -55,8 +55,9 @@ object Application extends Controller {
     request.body.asJson.map { json =>
       ( json \ "email" ).asOpt[String].map { email =>
         ( json \ "paswd" ).asOpt[String].map { paswd =>
+          
           var response = ""
-          if (email=="bob" && paswd=="bob") {
+          if (email=="jacob" && paswd=="therealultimatesite") {
             response = """{
               "response":"ok",
               "credential":"%s"
