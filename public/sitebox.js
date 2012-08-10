@@ -71,6 +71,11 @@ function newLogin(){
   return form;
 }
 
+var converters = {
+  "DIV":function(item,content){item.html(converter.makeHtml(content));},
+  "STYLE":function(item,content){item.text(content);}
+}
+
 function newEditor(){
   
   var div = $("<div id='editor'>");
@@ -83,7 +88,7 @@ function newEditor(){
     div.append( $("<h3>").text(key), 
                 $("<textarea id='"+key+"-editor'>").text(page_content[key]).keyup(function(event){
                   var value = this.value;
-                  $("#"+key).html(converter.makeHtml(value));
+                  converters[item.nodeName]($("#"+key),value);
                   page_content[key] = value;
                 }));
   });
