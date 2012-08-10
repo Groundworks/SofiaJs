@@ -215,6 +215,7 @@ function saveAll(){
 
         push_notification.pnotify(success);
       }
+      pageEditorDirty = false;
       if(siteEditorDirty){
         $.ajax({
           url: siteboxhost + "/site",
@@ -224,6 +225,7 @@ function saveAll(){
           contentType: "application/json; charset=utf-8",
           success:function(data,textStatus,jqXHR){
             good();
+            siteEditorDirty = false;
           },
           error:function(jqXHR,textStatus,errorThrown){
             log("Error");
