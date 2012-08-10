@@ -217,7 +217,8 @@ $(function(){
       for(key in data){
         log("Inserting Content into Element: "+key)
         value = data[key];
-        $("#"+key).html(converter.makeHtml(value));
+        var item = $("#"+key);
+        converters[item[0].nodeName](item,value);
       }
       
       log("Content Loaded");
@@ -246,7 +247,8 @@ $(function(){
       for(key in data){
         log("Inserting Site-Wide Content into Element: "+key)
         value = data[key];
-        $("#"+key).html(converter.makeHtml(value));
+        var item = $("#"+key);
+        converters[item[0].nodeName](item,value);
       }
       
       log("Site-Wide Content Loaded");
