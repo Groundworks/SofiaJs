@@ -5,7 +5,59 @@ var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
 
+var credentialUrl = siteboxhost + "/cred"
+function getCredential( onSuccess, onFailure ){
+  // get credentials from store or login
+  credential = localStorage.getItem("sitebox-credentials");
+  if(credential) {
+    onSuccess(credential)
+  } else {
+    onFailure()
+  }
+}
+
+function ajaxLogin(){
+  var email = $("#sitebox-login-email").val();
+  var paswd = $("#sitebox-login-pass").val();
+  
+  $.ajax({
+    url: credentialUrl,
+    type: "POST",
+    dataType: "json",
+    data: JSON.stringify({
+      email : email,
+      paswd : paswd
+    }),
+    contentType: "application/json; charset=utf-8",
+    success:function(data, textStatus, jqXHR){
+      var response = data["response"];
+      if(response=="ok"){
+        $("#sitebox-login-form").remove();
+        $("#editor-frame").append(newEditor());
+        var credential = data["credential"];
+        localStorage.setItem("sitebox-credentials",credential);
+      } else {
+        alert("Login Fail");
+      }
+      
+    }
+  });
+}
+
+function newLogin(){
+  var form = $("<form id='sitebox-login-form'>").append(
+    $("<input type='text' id='sitebox-login-email'/><br/>")
+  ).append(
+    $("<input type='password' id='sitebox-login-pass'/><br/>")
+  ).append(
+    $("<input type='button' onclick='ajaxLogin();' value='Login'/><br/>")
+  );
+  
+  return form;
+}
+
 function newEditor(){
+  
   var div = $("<div id='editor'>");
   
   div.append($("<h2>Page Content</h2>"));
@@ -60,6 +112,25 @@ function saveAll(){
   
 }
 
+function drawerOpen(){
+  $("body").append("<div id='windowshade' style='opacity:0' onclick='toggleEdit();'>&nbsp;</div>");
+  $(".sitebox,.pagebox").each(function(index,item){
+    $(item).css("position", "relative");
+    $(item).append($("<div class='edit-label'>").text( $(item).attr('id') ));
+  }).addClass("editable");
+  $("#windowshade").animate({
+    opacity: '1.0'
+  }, 100, function(){
+    // Window Shade Animation complete.
+  });
+  $("body").animate({
+    left: '500px'
+  }, 500, function() {
+    // Body Animation complete.
+  });
+  editing = true;
+}
+
 function toggleEdit(){
   if(editing){
     $("body").removeClass("editing");
@@ -75,23 +146,14 @@ function toggleEdit(){
     editing = false;
   }else{
     $("body").addClass("editing");
-    $("html").append( newEditor() );
-    $("body").append("<div id='windowshade' style='opacity:0' onclick='toggleEdit();'>&nbsp;</div>");
-    $(".sitebox,.pagebox").each(function(index,item){
-      $(item).css("position", "relative");
-      $(item).append($("<div class='edit-label'>").text( $(item).attr('id') ));
-    }).addClass("editable");
-    $("#windowshade").animate({
-      opacity: '1.0'
-    }, 100, function(){
-      // Window Shade Animation complete.
-    });
-    $("body").animate({
-      left: '500px'
-    }, 500, function() {
-      // Body Animation complete.
-    });
-    editing = true;
+    var frame = $("<div id='editor-frame'>");
+    getCredential(function(credential){
+      $("html").append( frame.append(newEditor()) );
+      drawerOpen();
+    },function(){
+      $("html").append( frame.append(newLogin()) );
+      drawerOpen();
+    })
   }
 }
 
