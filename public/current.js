@@ -19,5 +19,7 @@ function includeJs(jsFilePath) {
 
     document.body.appendChild(js);
 }
+includeCss(siteboxhost+"/assets/jquery.pnotify.default.css");
+includeCss(siteboxhost+"/assets/jquery.pnotify.default.icons.css");
 includeCss(siteboxhost+"/assets/stylesheets/main.css");
 includeJs(siteboxhost+"/assets/sitebox.js");
