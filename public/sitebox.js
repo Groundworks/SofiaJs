@@ -6,6 +6,10 @@ var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
 
+function saveNotice(){
+  saveAll();
+}
+
 function logout(){
   localStorage.removeItem("sitebox-credentials");
   drawerClose();
@@ -118,6 +122,41 @@ function saveAll(){
     site_content:site_content
   }
   
+  var percent = 0;
+  var notice = $.pnotify({
+    title: "Saving...",
+    type: 'info',
+    icon: 'picon picon-throbber',
+    hide: false,
+    closer: false,
+    sticker: false,
+    opacity: .75,
+    shadow: false,
+    width: "250px"
+  });
+  
+  var success = {};
+  success.title = "Success!";
+  success.text  = "Your update has been saved";
+  success.type = "success";
+  success.hide = true;
+  success.closer = true;
+  success.sticker = true;
+  success.icon = 'picon picon-task-complete';
+  success.opacity = 1;
+  success.shadow = true;
+  
+  var failure = {};
+  failure.title = "Error";
+  failure.text  = "Your updates could not be saved";
+  failure.type = "error";
+  failure.hide = false;
+  failure.closer = true;
+  failure.sticker = true;
+  failure.icon = 'picon picon-task-complete';
+  failure.opacity = 1;
+  failure.shadow = true;
+  
   log("Saving Updated Contents...")
   $.ajax({
     url:  updateurl,
@@ -127,13 +166,13 @@ function saveAll(){
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
       log("Contents Saved");
+      notice.pnotify(success);
     },
     error:function(jqXHR, textStatus, errorThrown){
       log("Not Saved");
+      notice.pnotify(failure);
     }
   });
-  
-  
 }
 
 function drawerClose(){
@@ -150,7 +189,7 @@ function drawerClose(){
   drawerIsOpen = false;
 }
 
-function drawerOpen(){
+function drawerOpen(){  
   $("body").append("<div id='windowshade' style='opacity:0' onclick='toggleEdit();'>&nbsp;</div>");
   $(".sitebox,.pagebox").each(function(index,item){
     $(item).css("position", "relative");
@@ -172,7 +211,7 @@ function drawerOpen(){
 function toggleEdit(){
   if(drawerIsOpen){
     if(editing){
-      saveAll();
+      saveNotice();
     }
     drawerClose();
   }else{
