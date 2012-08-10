@@ -19,11 +19,11 @@ function pushToMain(){
       }),
       contentType: "application/json; charset=utf-8",
       success:function(data, textStatus, jqXHR){
-        $.pnotify({'title':'Success','text':'Push Complete',type:'success',delay:3});
+        $.pnotify({'title':'Success','text':'Push Complete',type:'success'});
         window.location.hash = "";
       },
       error:function(jqXHR, textStatus, errorThrown){
-        $.pnotify({'title':'Success','text':'Push Complete',type:'error',delay:3});
+        $.pnotify({'title':'Success','text':'Push Complete',type:'error'});
       }
     });
   },function(){
