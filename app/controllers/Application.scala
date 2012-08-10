@@ -182,11 +182,11 @@ object Application extends Controller {
           } else {
             // Fail Credentials
             println("Credential Received is Invalid :"+credential)
-            BadRequest("")
+            BadRequest("Credential Received is Invalid")
           }
         }.getOrElse {
           println("No Credentials Received for Request")
-          BadRequest("")
+          BadRequest("Credential Received is Invalid")
         }
       }.getOrElse {
         BadRequest("JSON Request Must Include Location Parameter")
