@@ -1,5 +1,7 @@
 package controllers
 
+import java.security.MessageDigest
+
 import anorm._
 import anorm.SqlParser._
 
@@ -33,14 +35,14 @@ object Memstore {
     }
   }
   
-  def setData(file:String,jsObject:JsObject) {
+  def setData(file:String,jsObject:String) {
     DB.withConnection { implicit connection => 
       SQL("DELETE from page WHERE pagekey={pagekey}").on("pagekey"->file).execute()
       SQL("""
         INSERT INTO page (content,pagekey) VALUES ({content},{pagekey})
         """).on(
           "pagekey" -> file,
-          "content" -> Json.stringify(jsObject)
+          "content" -> jsObject
         ).executeInsert()
       }
   }
@@ -115,11 +117,14 @@ object Application extends Controller {
       
       (json \ "location").asOpt[String].map { location =>
         
+        var hash = (json \ "hash").asOpt[String].getOrElse{""}
+        
         val url  = new URL(location)
         val path = url.getPath()
         val host = url.getHost()
         
-        val pagekey = host + path
+        val pagekey = host + path + hash
+        println("PageKey (Read):"+pagekey)
         
         // Get Data //
         
@@ -156,17 +161,42 @@ object Application extends Controller {
     }
   }
   
+  def push = Action { request =>
+    request.body.asJson.map { json => 
+      (json \ "location").asOpt[String].map { location => 
+        val hash = (json \ "hash").asOpt[String].getOrElse{""}
+        val url  = new URL(location)
+        val path = url.getPath()
+        val host = url.getHost()
+        (json \ "credential").asOpt[String].map { credential => 
+          if(credential==masterCredential){
+            Memstore.setData(host+path,Memstore.getData(host+path+hash).get)
+            Ok("")
+          }else{
+            BadRequest("")
+          }
+        }.getOrElse{BadRequest("")}
+      }.getOrElse{BadRequest("")}
+    }.getOrElse{BadRequest("")}
+  }
+  
   // Serve Content via JSON API
   def update = Action { request =>
     request.body.asJson.map { json =>
       
       (json \ "location").asOpt[String].map { location =>
         
+        val pageContent = (json \ "page_content").asOpt[JsObject].map{page=>Json.stringify(page)}.getOrElse{"{}"}
+        val siteContent = (json \ "site_content").asOpt[JsObject].map{site=>Json.stringify(site)}.getOrElse{"{}"}
+        
+        var hash = MessageDigest.getInstance("SHA1").digest((pageContent+siteContent).getBytes).map("%02X".format(_)).mkString
+        
         val url  = new URL(location)
         val path = url.getPath()
         val host = url.getHost()
         
-        val pagekey = host + path
+        val pagekey = host + path + "#" + hash
+        println("PageKey (Update):"+pagekey)
         
         // Save Incoming Data //
         (json \ "credential").asOpt[String].map { credential => 
@@ -175,14 +205,10 @@ object Application extends Controller {
           if (credential==masterCredential){
             println("Credential Received is Valid - Saving Data")
             
-            (json \ "page_content").asOpt[JsObject].map { page =>
-              Memstore.setData(pagekey,page)
-            }
-            (json \ "site_content").asOpt[JsObject].map { site:JsObject =>
-              Memstore.setData(host,site)
-            }
+            Memstore.setData(pagekey,pageContent)
+            Memstore.setData(host   ,siteContent)
             
-            Ok("")
+            Ok("""{"hashbang":"%s"}""" format hash).withHeaders("Content-Type"->"application/json")
             
           } else {
             // Fail Credentials

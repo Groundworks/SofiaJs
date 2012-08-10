@@ -6,6 +6,31 @@ var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
 
+function pushToMain(){
+  getCredential(function(credential){
+    $.ajax({
+      url: siteboxhost+"/push",
+      type: "POST",
+      dataType: "json",
+      data: JSON.stringify({
+        hash     : window.location.hash,
+        location : window.location.href,
+        credential:credential
+      }),
+      contentType: "application/json; charset=utf-8",
+      success:function(data, textStatus, jqXHR){
+        $.pnotify({'title':'Success','text':'Push Complete',type:'success'});
+        window.location.hash = "";
+      },
+      error:function(jqXHR, textStatus, errorThrown){
+        $.pnotify({'title':'Success','text':'Push Complete',type:'error'});
+      }
+    });
+  },function(){
+    // error
+  });
+}
+
 function saveNotice(){
   saveAll();
 }
@@ -137,7 +162,7 @@ function saveAll(){
   
   var success = {};
   success.title = "Success!";
-  success.text  = "Your update has been saved";
+  success.text  = "Your update has been saved but will not appear on the main page until pushed to the main page.<div style='margin-top:5px; text-align:right;'><button onclick='pushToMain()'>Push to Main</button></div>";
   success.type = "success";
   success.hide = true;
   success.closer = true;
@@ -166,6 +191,7 @@ function saveAll(){
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
       log("Contents Saved");
+      window.location.hash = data["hashbang"];
       notice.pnotify(success);
     },
     error:function(jqXHR, textStatus, errorThrown){
@@ -235,11 +261,13 @@ function log(message){
 
 $(function(){
   
+  var hashbang= window.location.hash;
   var pagekey = window.location.href;
   var request = {
     location: pagekey,
     version : "current",
-    content : "page"
+    content : "page",
+    hash    : hashbang
   };
   
   log("Loading Page Content for: " + pagekey);
@@ -277,7 +305,8 @@ $(function(){
     data: JSON.stringify({
       version :"current",
       location:window.location.href,
-      content :"site"
+      content :"site",
+      hash    : hashbang
     }),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){

@@ -10,6 +10,7 @@ POST    /content                    controllers.Application.content
 POST    /update                     controllers.Application.update
 OPTIONS /content                    controllers.Application.options
 POST    /cred                       controllers.Application.cred
+POST    /push                       controllers.Application.push
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
