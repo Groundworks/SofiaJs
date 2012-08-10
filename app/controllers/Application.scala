@@ -49,13 +49,33 @@ object Memstore {
 
 object Application extends Controller {
   
+  val masterCredential = "0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf";
+  
   def cred = Action { request =>
-    println(request)
-    val response = """{
-      "response":"ok",
-      "credential":"0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf"
-    }"""
-    Ok(response)
+    request.body.asJson.map { json =>
+      ( json \ "email" ).asOpt[String].map { email =>
+        ( json \ "paswd" ).asOpt[String].map { paswd =>
+          var response = ""
+          if (email=="bob" && paswd=="bob") {
+            response = """{
+              "response":"ok",
+              "credential":"%s"
+            }""" format ( masterCredential )
+          } else {
+            response = """{
+              "response":"fail"
+            }"""
+          }
+          Ok(response)
+        }.getOrElse {
+            BadRequest("Valid Password Required")
+        }
+      }.getOrElse {
+        BadRequest("Valid Email Required")
+      }
+    } .getOrElse{
+      BadRequest("JSON Request Required")
+    }
   }
   
   def auth = Action { request =>
@@ -96,30 +116,16 @@ object Application extends Controller {
         
         val pagekey = host + path
         
-        // Save Incoming Data //
-        
-        (json \ "page_content").asOpt[JsObject].map { page =>
-          println("Saving Page Data for: " + host)
-          Memstore.setData(pagekey,page)
-        }
-        
-        (json \ "site_content").asOpt[JsObject].map { site:JsObject =>
-          println("Saving Site Data for: " + host)
-          Memstore.setData(host,site)
-        }
-        
         // Get Data //
         
         val site = Memstore.getData(host) match {
           case Some(site:String) => 
-            println("Loaded Existing Site Data for: " + host)
             site
           case _ => Json.stringify(Memstore.load("/site"))
         }
         
         val page = Memstore.getData(pagekey) match {
           case Some(page:String) => 
-            println("Loaded Existing Page Data for: " + host)
             page
           case _ => Json.stringify(Memstore.load("/default"))
         }
@@ -137,6 +143,51 @@ object Application extends Controller {
           BadRequest("JSON Request Must Include Content Type")
         }
         
+      }.getOrElse {
+        BadRequest("JSON Request Must Include Location Parameter")
+      }
+    }.getOrElse {
+      BadRequest("Expecting Json data")
+    }
+  }
+  
+  // Serve Content via JSON API
+  def update = Action { request =>
+    request.body.asJson.map { json =>
+      
+      (json \ "location").asOpt[String].map { location =>
+        
+        val url  = new URL(location)
+        val path = url.getPath()
+        val host = url.getHost()
+        
+        val pagekey = host + path
+        
+        // Save Incoming Data //
+        (json \ "credential").asOpt[String].map { credential => 
+          println("Credentials Received")
+          // Check Credentials Here //
+          if (credential==masterCredential){
+            println("Credential Received is Valid - Saving Data")
+            
+            (json \ "page_content").asOpt[JsObject].map { page =>
+              Memstore.setData(pagekey,page)
+            }
+            (json \ "site_content").asOpt[JsObject].map { site:JsObject =>
+              Memstore.setData(host,site)
+            }
+            
+            Ok("")
+            
+          } else {
+            // Fail Credentials
+            println("Credential Received is Invalid :"+credential)
+            BadRequest("")
+          }
+        }.getOrElse {
+          println("No Credentials Received for Request")
+          BadRequest("")
+        }
       }.getOrElse {
         BadRequest("JSON Request Must Include Location Parameter")
       }

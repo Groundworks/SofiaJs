@@ -7,6 +7,7 @@ GET     /                           controllers.Application.index
 
 POST    /auth                       controllers.Application.auth
 POST    /content                    controllers.Application.content
+POST    /update                     controllers.Application.update
 OPTIONS /content                    controllers.Application.options
 POST    /cred                       controllers.Application.cred
 
