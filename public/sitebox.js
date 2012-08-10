@@ -19,11 +19,11 @@ function pushToMain(){
       }),
       contentType: "application/json; charset=utf-8",
       success:function(data, textStatus, jqXHR){
-        $.pnotify({'title':'Success','text':'Push Complete',type:'success'});
+        $.pnotify({'title':'Success','text':'Push Complete',type:'success',delay:3});
         window.location.hash = "";
       },
       error:function(jqXHR, textStatus, errorThrown){
-        $.pnotify({'title':'Success','text':'Push Complete',type:'error'});
+        $.pnotify({'title':'Success','text':'Push Complete',type:'error',delay:3});
       }
     });
   },function(){
@@ -157,7 +157,6 @@ function saveAll(){
     sticker: false,
     opacity: .75,
     shadow: false,
-    width: "250px"
   });
   
   var success = {};
