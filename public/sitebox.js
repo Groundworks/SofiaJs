@@ -7,6 +7,9 @@ var page_content = {};
 var converter = new Showdown.converter();
 var push_notification;
 
+var pageEditorDirty;
+var siteEditorDirty;
+
 function pushToMain(){
   getCredential(function(credential){
     $.ajax({
@@ -116,6 +119,7 @@ function newEditor(){
     var key = $(item).attr('id');
     div.append( $("<h3>").text(key), 
                 $("<textarea id='"+key+"-editor'>").text(page_content[key]).keyup(function(event){
+                  pageEditorDirty = true;
                   var value = this.value;
                   converters[item.nodeName]($("#"+key),value);
                   page_content[key] = value;
@@ -128,6 +132,7 @@ function newEditor(){
     var key = $(item).attr('id');
     div.append( $("<h3>").text(key), 
                 $("<textarea id='"+key+"-editor'>").text(site_content[key]).keyup(function(event){
+                  siteEditorDirty = true;
                   var value = this.value;
                   $("#"+key).html(converter.makeHtml(value));
                   site_content[key] = value;
@@ -249,7 +254,7 @@ function drawerOpen(){
 
 function toggleEdit(){
   if(drawerIsOpen){
-    if(editing){
+    if(editing && (siteEditorDirty||pageEditorDirty)){
       saveNotice();
     }
     drawerClose();
