@@ -19,8 +19,7 @@ function pushToMain(){
       }),
       contentType: "application/json; charset=utf-8",
       success:function(data, textStatus, jqXHR){
-        $.pnotify({'title':'Success','text':'Push Complete',type:'success'});
-        window.location.hash = "";
+        $.pnotify({'title':'Success','text':'Push Complete - <a href="'+ window.location.href.split('#')[0] +'">View</a>',type:'success'});
       },
       error:function(jqXHR, textStatus, errorThrown){
         $.pnotify({'title':'Success','text':'Push Complete',type:'error'});
@@ -140,6 +139,8 @@ function newEditor(){
 function saveAll(){
   var credential = localStorage.getItem("sitebox-credentials");
   
+  var path = window.location.href.split('#')[0]
+  
   var request = {
     credential:credential,
     location:window.location.href,
@@ -161,7 +162,6 @@ function saveAll(){
   
   var success = {};
   success.title = "Success!";
-  success.text  = "Your update has been saved but will not appear on the main page until pushed to the main page.<div style='margin-top:5px; text-align:right;'><button onclick='pushToMain()'>Push to Main</button></div>";
   success.type = "success";
   success.hide = true;
   success.closer = true;
@@ -191,6 +191,16 @@ function saveAll(){
     success:function(data, textStatus, jqXHR){
       log("Contents Saved");
       window.location.hash = data["hashbang"];
+      
+      success.text  = "<p>Your changes has been saved but will not \
+                       appear as the main version at:\
+                       <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
+                       You must <button onclick='pushToMain()'>Push Changes</button></p> \
+                       <p style='word-wrap:break-word;'>The current version is accessible any time at:\
+                       <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
+                       <div style='margin-top:5px; text-align:right;'> \
+                       </div>";
+      
       notice.pnotify(success);
     },
     error:function(jqXHR, textStatus, errorThrown){
