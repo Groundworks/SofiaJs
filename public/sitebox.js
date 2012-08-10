@@ -149,6 +149,7 @@ function ajaxLogin(){
         $("#sitebox-login-form").remove();
         $("#editor-frame").append(newEditor());
         drawerIsOpen = true;
+        editing = true;
         var credential = data["credential"];
         localStorage.setItem("sitebox-credentials",credential);
       } else {
