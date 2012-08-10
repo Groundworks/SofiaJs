@@ -47,14 +47,20 @@ function ajaxLogin(){
 }
 
 function newLogin(){
-  var form = $("<form id='sitebox-login-form'>").append(
-    $("<input type='text' id='sitebox-login-email'/><br/>")
-  ).append(
-    $("<input type='password' id='sitebox-login-pass'/><br/>")
-  ).append(
-    $("<input type='button' onclick='ajaxLogin();' value='Login'/><br/>")
-  );
-  
+  var form  = $("<form id='sitebox-login-form'>");
+  var title = $("<h3>Please Login to Edit</h3>");
+  var hr    = $("<hr/>");
+  var emlab = $("<label>Email</label>");
+  var email = $("<input type='text' id='sitebox-login-email'/><br/>");
+  var pwlab = $("<label>Password</label>");
+  var paswd = $("<input type='password' id='sitebox-login-pass'/><br/>");
+  var button = $("<input type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Login'/><br/>");
+  paswd.keyup(function(event){
+      if(event.keyCode == 13){
+          $("#sitebox-login-button").click();
+      }
+  });
+  form.append(title,hr,emlab,email,pwlab,paswd,button);
   return form;
 }
 
@@ -146,7 +152,6 @@ function drawerOpen(){
   }, 500, function() {
     // Body Animation complete.
   });
-  editing=true;
 }
 
 function toggleEdit(){
@@ -166,6 +171,7 @@ function toggleEdit(){
     },function(){
       $("html").append( frame.append(newLogin()) );
       drawerOpen();
+      $("#sitebox-login-email").select();
     });
     drawerIsOpen = true;
   }
