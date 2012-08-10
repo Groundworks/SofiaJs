@@ -13,6 +13,7 @@ POST    /cred                       controllers.Application.cred
 POST    /push                       controllers.Application.push
 POST    /site                       controllers.Application.site
 POST    /pullrequest                controllers.Application.pullrequest
+POST    /pullrequests               controllers.Application.pullrequests
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

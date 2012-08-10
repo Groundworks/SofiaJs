@@ -30,15 +30,23 @@ object Memstore {
   def setPullRequest(from:String,to:String){
     println("Pull Request Submitted from: "+from+" to: "+to)
     DB.withConnection { implicit connection => 
-      removePullRequest(from,to)
+      removePullRequest(from)
       SQL("""
         INSERT INTO pullrequest (fromkey,tokey) VALUES ({fromkey},{tokey})
         """).on("fromkey"->from,"tokey"->to).executeInsert();
     }
   }
   
-  def removePullRequest(from:String,to:String){
-    println("Pull Request Submitted from: "+from+" to: "+to)
+  def getPullRequests(to:String):List[String] = {
+    DB.withConnection { implicit connection => 
+      SQL("""SELECT fromkey FROM pullrequest WHERE tokey={tokey}""").on("tokey"->to).as( str("fromkey") * ).map {
+        case x:String => x
+      }
+    }
+  }
+  
+  def removePullRequest(from:String){
+    println("Pull Request Submitted from: "+from)
     DB.withConnection { implicit connection => 
       SQL("DELETE from pullrequest WHERE fromkey={fromkey}").on("fromkey"->from).execute()
     }
@@ -207,6 +215,19 @@ object Application extends Controller {
     }.getOrElse{BadRequest("")}
   }
   
+  def pullrequests = Action { request => 
+    request.body.asJson.map { json =>
+      (json \ "location").asOpt[String].map {location =>
+        
+        val prs:List[String] = Memstore.getPullRequests(location)
+        
+        Ok(Json.toJson(prs))
+        
+      }.getOrElse{BadRequest("")}
+    }.getOrElse{BadRequest("")}
+    
+  }
+  
   def push = Action { request =>
     request.body.asJson.map { json => 
       (json \ "location").asOpt[String].map { location => 
@@ -224,6 +245,7 @@ object Application extends Controller {
         (json \ "credential").asOpt[String].map { credential => 
           if(credential==masterCredential){
             Memstore.setData(pagekey,Memstore.getData(hashkey).get)
+            Memstore.removePullRequest(hashkey)
             Ok("")
           }else if(credential==guestCredential){
             BadRequest("")

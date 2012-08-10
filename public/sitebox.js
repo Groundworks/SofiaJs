@@ -6,7 +6,6 @@ var site_content = {};
 var page_content = {};
 var converter = new Showdown.converter();
 var push_notification;
-
 var pageEditorDirty;
 var siteEditorDirty;
 
@@ -30,6 +29,26 @@ function pullRequest(){
     });
   },function(){
     // error
+  });
+}
+
+function getPullRequests(){
+  $.ajax({
+    url: siteboxhost+"/pullrequests",
+    type: "POST",
+    dataType: "json",
+    data: JSON.stringify({
+      location : window.location.href
+    }),
+    contentType: "application/json; charset=utf-8",
+    success:function(data, textStatus, jqXHR){
+      for(key in data){
+        $.pnotify({'title':'Success','text':'Pull Request from: <a style="word-wrap:break-word;" href="'+data[key]+'">'+data[key]+'</a>',type:'success'});
+      }
+    },
+    error:function(jqXHR, textStatus, errorThrown){
+      $.pnotify({'title':'Success','text':'Pull Requests Cannot be Downloaded: '+textStatus+' <i>'+errorThrown+'</i>',type:'error'});
+    }
   });
 }
 
@@ -253,7 +272,7 @@ function saveAll(){
       var good = function(){
         log("Contents Saved");
         window.location.hash = data["hashbang"];
-        var role = data["role"];
+        role = data["role"];
         
         console.log(data);
         
@@ -270,7 +289,7 @@ function saveAll(){
           success.text  = "<p>Your changes has been saved but will not \
                            appear as the main version at:\
                            <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
-                           You must request the owner to <button onclick='pullRequest()'>Pull Changes</button></p> \
+                           You must request the owner to push changes. <button onclick='pullRequest()'>Request Push</button></p> \
                            <p style='word-wrap:break-word;'>The current version is accessible any time at:\
                            <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
                            <div style='margin-top:5px; text-align:right;'> \
@@ -372,8 +391,7 @@ function log(message){
   $("#console").append($("<p>").text(message));
 }
 
-$(function(){
-  
+function loadContent(){
   var hashbang= window.location.hash;
   var pagekey = window.location.href;
   var request = {
@@ -439,6 +457,16 @@ $(function(){
     error:function(jqXHR, textStatus, errorThrown){
       log("There was an Error: " + textStatus);
     }
+  });
+}
+
+$(function(){
+  
+  getPullRequests();
+  loadContent();
+  
+  $(window).bind('hashchange', function() {
+    loadContent();
   });
   
 });
