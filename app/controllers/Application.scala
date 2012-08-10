@@ -27,20 +27,20 @@ object Memstore {
     Json.parse( Play.getExistingFile("resources/"+file+".json") )
   }
   
-  def setPullRequest(file:String){
-    println("Pull Request Submitted for: "+file)
+  def setPullRequest(from:String,to:String){
+    println("Pull Request Submitted from: "+from+" to: "+to)
     DB.withConnection { implicit connection => 
-      removePullRequest(file)
+      removePullRequest(from,to)
       SQL("""
-        INSERT INTO pullrequest (pagekey) VALUES ({pagekey})
-        """).on("pagekey"->file).executeInsert();
+        INSERT INTO pullrequest (fromkey,tokey) VALUES ({fromkey},{tokey})
+        """).on("fromkey"->from,"tokey"->to).executeInsert();
     }
   }
   
-  def removePullRequest(file:String){
-    println("Pull Request Resolved for: "+file)
+  def removePullRequest(from:String,to:String){
+    println("Pull Request Submitted from: "+from+" to: "+to)
     DB.withConnection { implicit connection => 
-      SQL("DELETE from pullrequest WHERE pagekey={pagekey}").on("pagekey"->file).execute()
+      SQL("DELETE from pullrequest WHERE fromkey={fromkey}").on("fromkey"->from).execute()
     }
   }
   
@@ -143,10 +143,12 @@ object Application extends Controller {
         var hash = (json \ "hash").asOpt[String].getOrElse{""}
         
         val url  = new URL(location)
+        var prot = url.getProtocol()
+        var port = url.getPort()
         val path = url.getPath()
         val host = url.getHost()
         
-        val pagekey = host + path + hash
+        val pagekey = prot + "://" + host + ":%d".format(port) + path + hash
         println("PageKey (Read):"+pagekey)
         
         // Get Data //
@@ -189,11 +191,15 @@ object Application extends Controller {
       (json \ "location").asOpt[String].map { location => 
         
         val hash = (json \ "hash").asOpt[String].getOrElse{""}
+        
         val url  = new URL(location)
+        var prot = url.getProtocol()
+        var port = url.getPort()
         val path = url.getPath()
         val host = url.getHost()
+        val pagekey = prot + "://" + host + ":%d".format(port) + path
         
-        Memstore.setPullRequest(location)
+        Memstore.setPullRequest(location,pagekey)
         
         Ok( """{"message":"Pull Request Submitted"}""" )
         
@@ -205,12 +211,19 @@ object Application extends Controller {
     request.body.asJson.map { json => 
       (json \ "location").asOpt[String].map { location => 
         val hash = (json \ "hash").asOpt[String].getOrElse{""}
+        
         val url  = new URL(location)
+        var prot = url.getProtocol()
+        var port = url.getPort()
         val path = url.getPath()
         val host = url.getHost()
+        
+        val pagekey = prot + "://" + host + ":%d".format(port) + path
+        val hashkey = prot + "://" + host + ":%d".format(port) + path + hash
+        
         (json \ "credential").asOpt[String].map { credential => 
           if(credential==masterCredential){
-            Memstore.setData(host+path,Memstore.getData(host+path+hash).get)
+            Memstore.setData(pagekey,Memstore.getData(hashkey).get)
             Ok("")
           }else if(credential==guestCredential){
             BadRequest("")
@@ -228,7 +241,6 @@ object Application extends Controller {
       (json \ "location").asOpt[String].map { location => 
         
         val url  = new URL(location)
-        val path = url.getPath()
         val host = url.getHost()
         
         (json \ "site_content").asOpt[JsObject].map{siteContent=>
@@ -250,10 +262,12 @@ object Application extends Controller {
         var hash = MessageDigest.getInstance("SHA1").digest((pageContent.getOrElse{""}).getBytes).map("%02X".format(_)).mkString
         
         val url  = new URL(location)
+        var prot = url.getProtocol()
+        var port = url.getPort()
         val path = url.getPath()
         val host = url.getHost()
         
-        val pagekey = host + path + "#" + hash
+        val pagekey = prot + "://" + host + ":%d".format(port) + path + "#" + hash
         println("PageKey (Update):"+pagekey)
         
         // Save Incoming Data //

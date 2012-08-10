@@ -4,8 +4,9 @@
 
 CREATE TABLE pullrequest (
     id SERIAL,
-    pagekey TEXT NOT NULL,
-    PRIMARY KEY (pagekey)
+    fromKey TEXT NOT NULL,
+    tokey TEXT NOT NULL,
+    PRIMARY KEY (id)
 );
  
 # --- !Downs

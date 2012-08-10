@@ -49,7 +49,7 @@ function pushToMain(){
         $.pnotify({'title':'Success','text':'Push Complete - <a href="'+ window.location.href.split('#')[0] +'">View</a>',type:'success'});
       },
       error:function(jqXHR, textStatus, errorThrown){
-        $.pnotify({'title':'Success','text':'Push Complete',type:'error'});
+        $.pnotify({'title':'Success','text':'Push Error: '+textStatus+' <i>'+errorThrown+'</i>',type:'error'});
       }
     });
   },function(){
@@ -134,7 +134,7 @@ function guestLogin(){
 }
 
 function newLogin(){
-  var form  = $("<form id='sitebox-login-form'>");
+  var form  = $("<form id='sitebox-login-form' method='POST'>");
   var title = $("<h3>Please Login to Edit</h3>");
   var hr    = $("<hr/>");
   var emlab = $("<label>Email</label>");
