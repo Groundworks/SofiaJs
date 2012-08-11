@@ -1,17 +1,113 @@
 package controllers
 
-import java.security.MessageDigest
-
 import anorm._
 import anorm.SqlParser._
 
 import play.api._
-import play.api.mvc._
-import play.api.libs.json._
-import play.api.Play.current
 import play.api.db._
+import play.api.mvc._
+import play.api.libs.oauth._
+import play.api.libs.json._
+
+import play.api.libs.ws.WS
+import play.api.Play.current
+
+// Akka
+import play.libs.Akka._
+import play.api.libs.concurrent.AkkaPromise
+import akka.actor.{Actor,ActorRef,Props}
+import akka.pattern.ask 
+import akka.util.Timeout
+import akka.util.Duration
+import play.libs.Akka.system
 
 import java.net.URL
+import java.security.MessageDigest
+
+case object Success
+case class Failure(message:String)
+
+class GithubActor extends Actor {
+  
+  def receive = {
+    case body:AnyContent => verify(body,sender)
+    case _ => sender ! Failure("Message Not Understood")
+  }
+  
+  def verify(body:AnyContent,sender:ActorRef) = {
+    body.asJson.map { json => 
+      (json \ "code").asOpt[String].map { code =>
+        githubVerifyOAuth(code,(name:String)=>{
+          println("Called Success Callback")
+          sender ! Success
+        },(error:String)=>{
+          println("Called Failure Callback")
+          sender ! Failure(error)
+        })
+      }.getOrElse{
+        sender ! Failure("JSON Request Missing Code Parameter")
+      }
+    }.getOrElse{
+      sender ! Failure("Content not JSON")
+    }
+  }
+  
+  val githubClientId = "ec46f5e732b30cc3caca"
+  val githubClientSecret = "1f9b2f31289ffcedc6b96b28b1599b353d74ac47"
+  
+  def githubVerifyOAuth(code:String,callback:String=>Unit,error:String=>Unit) = {
+    println("Using Github Verification code: "+code)
+    WS.url("https://github.com/login/oauth/access_token").withHeaders(
+      "Accept" -> "application/json"
+    ).post(
+      Map(
+        "client_id"     -> Seq(githubClientId),
+        "client_secret" -> Seq(githubClientSecret),
+        "code"          -> Seq(code)
+      )
+    ).map { response => 
+      print( "/access_token Response: " + Json.stringify(response.json) )
+      (response.json \ "access_token").asOpt[String].map{ accessToken =>
+        println("Using Access Github Token: "+accessToken)
+        WS.url("https://api.github.com/user").withHeaders(
+          "Accept" -> "application/json"
+        ).withQueryString(
+          "access_token" -> accessToken
+        ).get().map { response => 
+          println( "/user Response: " + Json.stringify(response.json) )
+          (response.json \ "login").asOpt[String].map{ login => 
+            println("Using Login: "+login)
+            callback(login)
+          }.getOrElse{error("No login parameter in JSON response")}
+        } // Promise Expired
+      }.getOrElse(error("Missing Access Token")) // No Access Token
+    } // Promise Expired
+  }
+}
+
+object Authenticator extends Controller {
+  
+  val masterCredential = "0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf"
+  val guestCredential  = "039jf029jf2039fj0jf0a8jf0asnf0823nf023"
+  
+  val githubActorRef = system.actorOf( Props[GithubActor], name="github" )
+  
+  def oauth2Callback = Action {
+    Ok(views.html.oauthCallback())
+  }
+  
+  implicit val timeout : Timeout = Timeout(Duration(10,"seconds"))
+  
+  def oauth2 = Action { implicit request =>
+    Async {
+      new AkkaPromise( githubActorRef ? request.body ) map {
+        case Success => Ok("""{"response":"ok","credential":"%s"}""" format masterCredential)
+        case Failure(message) => BadRequest(message)
+        case _ => BadRequest("Internal Failure")
+      }
+    }
+  }
+}
 
 object Memstore {
   
@@ -85,12 +181,26 @@ object Application extends Controller {
   val masterCredential = "0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf"
   val guestCredential  = "039jf029jf2039fj0jf0a8jf0asnf0823nf023"
   
+  def digest(preimage:String) = {
+    MessageDigest.getInstance("SHA1").digest(preimage.getBytes).map("%02X".format(_)).mkString
+  }
+  
   def cred = Action { request =>
     request.body.asJson.map { json =>
       (json \ "key").asOpt[String].map{ key =>
+        (json \ "")
+        
+        val origin = request.headers.get("Referer").getOrElse{
+          BadRequest("")
+        }
+        
+        val preimage = key
+        val hashkey = digest(preimage)
         
         // Validate Credential
-        println("Logging in with key: %s" format key )
+        println("Credentials with Origin: (Unused) %s" format origin )
+        println("            and key    : %s" format key )
+        println("            and digest : %s" format hashkey )
         
         Ok("""{"response":"ok","credential":"%s"}""" format masterCredential)
       }.getOrElse{BadRequest("Need 'key' attribute in JSON request")}

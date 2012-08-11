@@ -131,13 +131,20 @@ function getCredential( onSuccess, onFailure ){
 }
 
 function ajaxLogin(){
-  var key = $("#sitebox-login-key").val();
+  
+  url = "https://github.com/login/oauth/authorize?client_id=ec46f5e732b30cc3caca";
+  var auth_window = window.open(url,'Github','height=400,width=400');
+  
+}
+
+function accessToken(code,window){
+  window.close();
   $.ajax({
-    url: credentialUrl,
+    url: siteboxhost + "/oauth2cred",
     type: "POST",
     dataType: "json",
     data: JSON.stringify({
-      key : key
+      code : code
     }),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
@@ -186,18 +193,9 @@ function newLogin(){
   var form  = $("<form id='sitebox-login-form'>");
   var title = $("<h3>Please Login to Edit</h3>");
   var hr    = $("<hr/>");
-  var kylab = $("<label>Access Key</label>");
-  var keyin = $("<input type='text' id='sitebox-login-key'/><br/>");
-  var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Login'/>");
+  var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Github Login'/>");
   var guest  = $("<input style='display:inline;' id='guest-login-button' type='button' onclick='guestLogin()' value='Guest Login'/>");
-  keyin.keydown(function(event){
-    if(event.keyCode == 13){
-      event.preventDefault();
-      button.click();
-      keyin.blur();
-    }
-  });
-  form.append(title,hr,kylab,keyin,button,guest);
+  form.append(title,hr,button,guest);
   return form;
 }
 
@@ -411,7 +409,7 @@ function toggleEdit(){
     },function(){
       $("html").append( frame.append(newLogin()) );
       drawerOpen();
-      $("#sitebox-login-email").select();
+      $("#sitebox-login-key").select();
     });
   }
 }
