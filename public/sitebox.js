@@ -131,16 +131,13 @@ function getCredential( onSuccess, onFailure ){
 }
 
 function ajaxLogin(){
-  var email = $("#sitebox-login-email").val();
-  var paswd = $("#sitebox-login-pass").val();
-  
+  var key = $("#sitebox-login-key").val();
   $.ajax({
     url: credentialUrl,
     type: "POST",
     dataType: "json",
     data: JSON.stringify({
-      email : email,
-      paswd : paswd
+      key : key
     }),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
@@ -155,7 +152,6 @@ function ajaxLogin(){
       } else {
         alert("Login Fail");
       }
-      
     }
   });
 }
@@ -187,22 +183,21 @@ function guestLogin(){
 }
 
 function newLogin(){
-  var form  = $("<form id='sitebox-login-form' method='POST'>");
+  var form  = $("<form id='sitebox-login-form'>");
   var title = $("<h3>Please Login to Edit</h3>");
   var hr    = $("<hr/>");
-  var emlab = $("<label>Email</label>");
-  var email = $("<input type='text' id='sitebox-login-email'/><br/>");
-  var pwlab = $("<label>Password</label>");
-  var paswd = $("<input type='password' id='sitebox-login-pass'/><br/>");
+  var kylab = $("<label>Access Key</label>");
+  var keyin = $("<input type='text' id='sitebox-login-key'/><br/>");
   var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Login'/>");
   var guest  = $("<input style='display:inline;' id='guest-login-button' type='button' onclick='guestLogin()' value='Guest Login'/>");
-  paswd.keyup(function(event){
-      if(event.keyCode == 13){
-          $("#sitebox-login-button").click();
-          $("#sitebox-login-email").select();
-      }
+  keyin.keydown(function(event){
+    if(event.keyCode == 13){
+      event.preventDefault();
+      button.click();
+      keyin.blur();
+    }
   });
-  form.append(title,hr,emlab,email,pwlab,paswd,button,guest);
+  form.append(title,hr,kylab,keyin,button,guest);
   return form;
 }
 

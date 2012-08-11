@@ -76,44 +76,25 @@ object Memstore {
 
 object Application extends Controller {
   
+  val BadRequestExpectingJson = BadRequest("Expecting JSON")
+  
   def current = Action {
     Assets.at(path="/public", "current.js")
   }
   
   val masterCredential = "0239jf09wjf09j23f902jf80hf0ajsf0392jf23023jf"
-  val guestCredential = "039jf029jf2039fj0jf0a8jf0asnf0823nf023"
+  val guestCredential  = "039jf029jf2039fj0jf0a8jf0asnf0823nf023"
   
   def cred = Action { request =>
     request.body.asJson.map { json =>
-      ( json \ "email" ).asOpt[String].map { email =>
-        ( json \ "paswd" ).asOpt[String].map { paswd =>
-          
-          var response = ""
-          if (email=="jacob" && paswd=="therealultimatesite") {
-            response = """{
-              "response":"ok",
-              "credential":"%s"
-            }""" format ( masterCredential )
-          } else if(email=="guest") {
-            response = """{
-              "response":"ok",
-              "credential":"%s"
-            }""" format ( guestCredential )
-          } else {
-            response = """{
-              "response":"fail"
-            }"""
-          }
-          Ok(response)
-        }.getOrElse {
-            BadRequest("Valid Password Required")
-        }
-      }.getOrElse {
-        BadRequest("Valid Email Required")
-      }
-    } .getOrElse{
-      BadRequest("JSON Request Required")
-    }
+      (json \ "key").asOpt[String].map{ key =>
+        
+        // Validate Credential
+        println("Logging in with key: %s" format key )
+        
+        Ok("""{"response":"ok","credential":"%s"}""" format masterCredential)
+      }.getOrElse{BadRequest("Need 'key' attribute in JSON request")}
+    }.getOrElse{BadRequestExpectingJson}
   }
   
   def auth = Action { request =>
@@ -131,6 +112,7 @@ object Application extends Controller {
   }
   
   def page(page:String) = Action {
+    
     Ok( views.html.example() )
   }
   
