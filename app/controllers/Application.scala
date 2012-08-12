@@ -277,7 +277,11 @@ object Application extends Controller {
             session.get("user").map { user =>
               if (user==clientid){
                 Memstore.setData(hashKey(location,user),content)
-                Ok("")
+                Ok("").withHeaders(
+                  "Access-Control-Allow-Origin"->"*",
+                  "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
+                  "Access-Control-Allow-Methods"->"POST"
+                )
               }else{
                 BadRequest("User Not Authenticated")
               }
