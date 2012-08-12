@@ -15,7 +15,8 @@
       }
       
       var code = getParameterByName("code");
-      window.opener.postMessage(code,"*");
+      window.opener.postMessage({type:"oauth",message:code},"http://sofiajs.com");
+      alert("Message Sent");
     </script>
   </head>
   <body style="text-align:center;">

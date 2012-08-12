@@ -116,6 +116,19 @@ object Authenticator extends Controller {
     println("User Logged Out")
     Ok("").withNewSession;
   }
+  
+  def login = Action { implicit request =>
+    println("Checking Login...")
+    val username = request.session.get("user").orNull
+    if(username==null){
+      println("User Not Logged In")
+      BadRequest("")
+    }else{
+      println("User Logged in as "+username)
+      Ok("").withSession("user"->username)
+    }
+  }
+  
 }
 
 object Memstore {
@@ -182,6 +195,10 @@ object Memstore {
 object Application extends Controller {
   
   val BadRequestExpectingJson = BadRequest("Expecting JSON")
+  
+  def loader = Action {
+    Ok(views.html.loader());
+  }
   
   def preflight(default:String) = Action { request =>
     val origin = request.headers.get("origin").getOrElse{"*"}

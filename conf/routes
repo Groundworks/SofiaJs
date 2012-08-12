@@ -7,12 +7,15 @@ GET     /                           controllers.Application.index
 GET     /oauth2                     controllers.Authenticator.oauth2Callback
 POST    /oauth2cred                 controllers.Authenticator.oauth2
 GET     /logout                     controllers.Authenticator.logout
+GET     /login                      controllers.Authenticator.login
 
 POST    /auth                       controllers.Application.auth
 POST    /content                    controllers.Application.content
 POST    /update                     controllers.Application.update
 
 OPTIONS /*default                   controllers.Application.preflight(default)
+
+GET     /loader                     controllers.Application.loader
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

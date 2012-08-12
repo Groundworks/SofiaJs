@@ -41,66 +41,29 @@ var converter = new Showdown.converter();
 var push_notification;
 var pageEditorDirty;
 var siteEditorDirty;
+var sofia;
+var auth_window;
 
 function saveNotice(){
   saveAll();
 }
 
 function logout(){
-  $.ajax({
-    url:siteboxhost + "/logout",
-  })
+  ipc("logout",null);
   localStorage.removeItem("username");
   drawerClose();
   editing=false;
 }
 
-function ajaxLogin(){
-  
-  url = "https://github.com/login/oauth/authorize?client_id=ec46f5e732b30cc3caca";
-  var auth_window = window.open(url,'Github','height=400,width=400');
-  
-  window.onmessage = function(event){
-    var message = event.data;
-    accessToken(message,auth_window);
-  }
-  
-}
-
-function accessToken(code,window){
-  $.ajax({
-    url: siteboxhost + "/oauth2cred",
-    type: "POST",
-    dataType: "json",
-    data: JSON.stringify({
-      code : code
-    }),
-    contentType: "application/json; charset=utf-8",
-    success:function(data, textStatus, jqXHR){
-      localStorage.setItem("username",data["username"]);
-      var response = data["response"];
-      if(response=="ok"){
-        $("#sitebox-login-form").remove();
-        $("#editor-frame").append(newEditor());
-        drawerIsOpen = true;
-        editing = true;
-      } else {
-        alert("Login Fail");
-      }
-      window.close();
-    },
-    error:function(x,y,z){
-      alert("Unexpected Login Error");
-      window.close();
-    }
-  });
+function authenticate(){
+  ipc("authenticate",null);
 }
 
 function newLogin(){
   var form  = $("<form id='sitebox-login-form'>");
   var title = $("<h3>Please Login to Edit</h3>");
   var hr    = $("<hr/>");
-  var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Github Login'/>");
+  var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='authenticate();' value='Github Login'/>");
   form.append(title,hr,button);
   return form;
 }
@@ -111,10 +74,6 @@ var converters = {
 }
 
 function newEditor(){
-  
-  if( localStorage.getItem("username") != clientid ){
-    return $("<div id='not-authorized'><h2>Sorry!</h2><p>You are Not Authorized to Edit this Page</p></div>");
-  }
   
   var div = $("<div id='editor'>");
   div.append($("<button id='editor-logout-button' onclick='logout();'>Log Out</button>"));
@@ -132,74 +91,59 @@ function newEditor(){
                 }));
   });
   
-  return $("<div id='editor-frame'>").append(div);
+  return div;
 }
 
 function saveAll(){
   
   var path = window.location.href.split('#')[0]
-  
   var request = {
-    location:window.location.href,
+    location:path,
     clientid:clientid,
     page_content:page_content,
   }
   
-  var percent = 0;
-  push_notification = $.pnotify({
-    title: "Saving...",
-    type: 'info',
-    icon: 'picon picon-throbber',
-    hide: false,
-    closer: false,
-    sticker: false,
-    opacity: .75,
-    shadow: false,
-  });
-  
-  var success = {};
-  success.title = "Success!";
-  success.text = "Your Update Has Been Saved";
-  success.type = "success";
-  success.hide = true;
-  success.closer = true;
-  success.sticker = true;
-  success.icon = 'picon picon-task-complete';
-  success.opacity = 1;
-  success.shadow = true;
-  
-  var failure = {};
-  failure.title = "Error";
-  failure.text  = "Your updates could not be saved";
-  failure.type = "error";
-  failure.hide = false;
-  failure.closer = true;
-  failure.sticker = true;
-  failure.icon = 'picon picon-task-complete';
-  failure.opacity = 1;
-  failure.shadow = true;
-  
   log("Saving Updated Contents...")
-  $.ajax({
-    url:  updateurl,
-    type: "POST",
-    dataType: "json",
-    xhrFields: {
-      withCredentials: true
-    },
-    data: JSON.stringify(request),
-    contentType: "application/json; charset=utf-8",
-    success:function(data, textStatus, jqXHR){
-      log("Contents Saved");
-      push_notification.pnotify(success);
-    },
-    error:function(jqXHR, textStatus, errorThrown){
-      log("Not Saved");
-      log(textStatus);
-      log(errorThrown);
-      push_notification.pnotify(failure);
-    }
-  });
+  ipc("update",request);
+  
+}
+
+var handlers = {
+  "alert":function(m){
+    alert(m);
+  },
+  "notice":function(options){
+    $.pnotify(options);
+  },
+  "oauth":function(code){
+    accessToken(code,auth_window);
+  },
+  "no login":function(x){
+    $("#editor-frame").html( newLogin() );
+    drawerOpen();
+    $("#sitebox-login-key").select();
+  },
+  "login ok":function(username){
+    $("#editor-frame").html( newEditor() );
+    editing = true;
+    drawerOpen();
+  }
+};
+
+window.onmessage = function(event){
+  var data = event.data;
+  if(handlers[data.type]){
+    handlers[data.type](data.message);
+  }else{
+    alert("Unexpected Message" + data);
+  }
+}
+
+function ipc(type,message){
+  $("#sofiajs-api")[0].contentWindow.postMessage({
+    type   :type,
+    message:message
+  },siteboxhost);
 }
 
 function drawerClose(){
@@ -245,17 +189,9 @@ function toggleEdit(){
     }
     drawerClose();
   }else{
-    $("body").addClass("editing");
-    var frame = $("<div id='editor-frame'>");
-    if(localStorage.getItem("username")){
-      $("html").append( frame.append(newEditor()) );
-      editing = true;
-      drawerOpen();
-    }else{
-      $("html").append( frame.append(newLogin()) );
-      drawerOpen();
-      $("#sitebox-login-key").select();
-    };
+    drawerOpen();
+    $("html").append("<div id='editor-frame'>");
+    ipc("login","");
   }
 }
 
@@ -307,6 +243,9 @@ $(function(){
   $(window).bind('hashchange', function() {
     loadContent();
   });
+  
+  var iframe = $("<iframe id='sofiajs-api' style='display:none;' src='http://sofiajs.com/loader'>");
+  $("html").append(iframe);
   
 });
 
