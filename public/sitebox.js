@@ -184,6 +184,9 @@ function saveAll(){
     url:  updateurl,
     type: "POST",
     dataType: "json",
+    xhrFields: {
+      withCredentials: true
+    },
     data: JSON.stringify(request),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){

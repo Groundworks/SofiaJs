@@ -183,11 +183,13 @@ object Application extends Controller {
   
   val BadRequestExpectingJson = BadRequest("Expecting JSON")
   
-  def preflight = Action {
+  def preflight(default:String) = Action { request =>
+    val origin = request.headers.get("origin").getOrElse{"*"}
     Ok("").withHeaders(
-      "Access-Control-Allow-Origin"->"*",
+      "Access-Control-Allow-Origin" ->origin,
       "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-      "Access-Control-Allow-Methods"->"POST"
+      "Access-Control-Allow-Methods"->"GET,POST",
+      "Access-Control-Allow-Credentials" -> "true"
     )
   }
   
@@ -268,7 +270,9 @@ object Application extends Controller {
   
   // Serve Content via JSON API
   def update = Action { implicit request =>
+    println("Recieving Update")
     request.body.asJson.map { json =>
+      println("Request: "+Json.stringify(json))
       (json \ "location").asOpt[String].map { location =>
         (json \ "clientid").asOpt[String].map { clientid => 
           (json \ "page_content").asOpt[JsObject].map{ x:JsObject => 
@@ -277,18 +281,20 @@ object Application extends Controller {
             session.get("user").map { user =>
               if (user==clientid){
                 Memstore.setData(hashKey(location,user),content)
+                val origin = request.headers.get("origin").getOrElse{"*"}
                 Ok("").withHeaders(
-                  "Access-Control-Allow-Origin"->"*",
+                  "Access-Control-Allow-Origin" ->origin,
                   "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-                  "Access-Control-Allow-Methods"->"POST"
+                  "Access-Control-Allow-Methods"->"POST",
+                  "Access-Control-Allow-Credentials" -> "true"
                 )
               }else{
                 BadRequest("User Not Authenticated")
               }
-            }.getOrElse{BadRequest("User Not in Session")}
-          }.getOrElse{BadRequest("Need to Authenticate")}
-        }.getOrElse{BadRequest("Client ID Needed")}
-      }.getOrElse{BadRequest("JSON Request Must Include Location Parameter")}
-    }.getOrElse{BadRequest("Expecting Json data")}
+            }.getOrElse{println("User Not in Session");BadRequest("")}
+          }.getOrElse{println("Need to Authenticate");BadRequest("")}
+        }.getOrElse{println("Client ID Needed");BadRequest("")}
+      }.getOrElse{println("JSON Request Must Include Location Parameter");BadRequest("")}
+    }.getOrElse{println("Expecting Json data");BadRequest("")}
   }
 }
