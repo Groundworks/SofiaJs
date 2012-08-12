@@ -127,7 +127,11 @@ var handlers = {
     $("#sitebox-login-key").select();
   },
   "login ok":function(username){
-    $("#editor-frame").html( newEditor() );
+    if(username==clientid){
+      $("#editor-frame").html( newEditor() );
+    }else{
+      $("#editor-frame").html("<div id='not-authorized'><h1>Sorry!</h1><p>Only "+username+" is authorized to edit this page</p><button onclick='logout()'>Logout</button></div>");
+    }
     editing = true;
     drawerOpen();
     if(auth_window) auth_window.close();
