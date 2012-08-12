@@ -60,6 +60,11 @@ function ajaxLogin(){
   url = "https://github.com/login/oauth/authorize?client_id=ec46f5e732b30cc3caca";
   var auth_window = window.open(url,'Github','height=400,width=400');
   
+  window.onmessage = function(event){
+    var message = event.data;
+    accessToken(message,auth_window);
+  }
+  
 }
 
 function accessToken(code,window){
