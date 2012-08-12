@@ -125,7 +125,7 @@ object Authenticator extends Controller {
       BadRequest("")
     }else{
       println("User Logged in as "+username)
-      Ok("").withSession("user"->username)
+      Ok(username).withSession("user"->username)
     }
   }
   
