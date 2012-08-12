@@ -43,6 +43,7 @@ var pageEditorDirty;
 var siteEditorDirty;
 var sofia;
 var auth_window;
+var windowshade;
 
 function saveNotice(){
   saveAll();
@@ -53,10 +54,6 @@ function logout(){
   localStorage.removeItem("username");
   drawerClose();
   editing=false;
-}
-
-function authenticate(){
-  ipc("authenticate",null);
 }
 
 function newLogin(){
@@ -71,6 +68,12 @@ function newLogin(){
 var converters = {
   "DIV"  :function(item,content){item.html(converter.makeHtml(content));},
   "STYLE":function(item,content){item.text(content);}
+}
+
+
+function authenticate(){
+  url = "https://github.com/login/oauth/authorize?client_id=ec46f5e732b30cc3caca";
+  auth_window = window.open(url,'Github','height=400,width=400');
 }
 
 function newEditor(){
@@ -127,6 +130,13 @@ var handlers = {
     $("#editor-frame").html( newEditor() );
     editing = true;
     drawerOpen();
+    if(auth_window) auth_window.close();
+  },
+  "authenticate":function(_){
+    oAuth();
+  },
+  "oauth":function(m){
+    ipc("oauth",m);
   }
 };
 
@@ -152,9 +162,7 @@ function drawerClose(){
   $(".editable").removeClass("editable");
   $("body").animate({
     left: '0'
-  }, 500, function() {
-    $("#editor-frame").remove();
-  });
+  }, 500, function() {});
   $(".edit-label").remove();
   editing = false;
   drawerIsOpen = false;
@@ -165,6 +173,7 @@ function drawerOpen(){
   if(push_notification){push_notification.pnotify_remove();}
   
   $("body").append("<div id='windowshade' style='opacity:0' onclick='toggleEdit();'>&nbsp;</div>");
+  
   $(".sitebox,.pagebox").each(function(index,item){
     $(item).css("position", "relative");
     $(item).append($("<div class='edit-label'>").text( $(item).attr('id') ));
@@ -189,8 +198,6 @@ function toggleEdit(){
     }
     drawerClose();
   }else{
-    drawerOpen();
-    $("html").append("<div id='editor-frame'>");
     ipc("login","");
   }
 }
@@ -237,6 +244,7 @@ function loadContent(){
 }
 
 $(function(){
+  $("html").append("<div id='editor-frame'>");
   
   loadContent();
   

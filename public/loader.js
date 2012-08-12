@@ -18,9 +18,6 @@ var handlers = {
   "logout":function(_){
     $.ajax({url:siteboxhost+"/logout"});
   },
-  "authenticate":function(_){
-    oAuth();
-  },
   "oauth":function(code){
     authenticate(code);
   }
@@ -28,7 +25,6 @@ var handlers = {
 
 window.onmessage = function(event){
   var data = event.data;
-  console.log(data);
   if(handlers[data.type]){
     handlers[data.type](data.message);
   }else{
@@ -83,11 +79,6 @@ function login(success,error){
   })
 }
 
-function oAuth(){
-  url = "https://github.com/login/oauth/authorize?client_id=ec46f5e732b30cc3caca";
-  auth_window = window.open(url,'Github','height=400,width=400');
-}
-
 function authenticate(code){
   console.log("Authenciate");
   
@@ -101,11 +92,9 @@ function authenticate(code){
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
       ipc("login ok",data.username);
-      auth_window.close();
     },
     error:function(x,y,z){
       alert("Unexpected Login Error");
-      auth_window.close();
     }
   });
   
