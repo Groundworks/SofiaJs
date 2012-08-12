@@ -291,10 +291,10 @@ object Application extends Controller {
               }else{
                 BadRequest("User Not Authenticated")
               }
-            }.getOrElse{println("User Not in Session");BadRequest("")}
-          }.getOrElse{println("Need to Authenticate");BadRequest("")}
-        }.getOrElse{println("Client ID Needed");BadRequest("")}
-      }.getOrElse{println("JSON Request Must Include Location Parameter");BadRequest("")}
-    }.getOrElse{println("Expecting Json data");BadRequest("")}
+            }.getOrElse{println("User Not in Session");BadRequest("User Not in Session")}
+          }.getOrElse{println("Need to Authenticate");BadRequest("Need to Authenticate")}
+        }.getOrElse{println("Client ID Needed");BadRequest("Client ID Needed")}
+      }.getOrElse{println("JSON Request Must Include Location");BadRequest("JSON Request Must Include Location")}
+    }.getOrElse{println("Expecting Json data");BadRequest("Expecting Json data")}
   }
 }
