@@ -94,7 +94,13 @@ object Authenticator extends Controller {
   }
   
   implicit val timeout : Timeout = Timeout(Duration(10,"seconds"))
-  
+  def oauth2Preflight = Action {
+    Ok("").withHeaders(
+      "Access-Control-Allow-Origin"->"*",
+      "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
+      "Access-Control-Allow-Methods"->"POST"
+    )
+  }
   def oauth2 = Action { implicit request =>
     Async {
       new AkkaPromise( githubActorRef ? request.body ) map {
@@ -102,8 +108,12 @@ object Authenticator extends Controller {
           """{"response":"ok","username":"%s"}""" format message
           ).withSession(
             "user" -> message
+          ).withHeaders(
+            "Access-Control-Allow-Origin"->"*",
+            "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
+            "Access-Control-Allow-Methods"->"POST"
           )
-        case Failure(message) => BadRequest(message)
+        case Failure(message) => BadRequest("Bad "+message)
         case _ => BadRequest("Internal Failure")
       }
     }

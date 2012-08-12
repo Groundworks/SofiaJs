@@ -6,6 +6,7 @@
 GET     /                           controllers.Application.index
 GET     /oauth2                     controllers.Authenticator.oauth2Callback
 POST    /oauth2cred                 controllers.Authenticator.oauth2
+OPTIONS /oauth2cred                 controllers.Authenticator.oauth2Preflight
 GET     /logout                     controllers.Authenticator.logout
 
 POST    /auth                       controllers.Application.auth
