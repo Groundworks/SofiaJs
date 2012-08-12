@@ -127,7 +127,6 @@ var handlers = {
     $("#sitebox-login-key").select();
   },
   "login ok":function(username){
-    alert(username,clientid);
     if(username==clientid){
       $("#editor-frame").html( newEditor() );
     }else{
