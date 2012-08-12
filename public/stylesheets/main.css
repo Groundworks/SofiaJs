@@ -11,6 +11,11 @@ html, body {
   margin-top: 100px;
   color:white;
 }
+#not-authorized {
+  color:white;
+  margin:24px auto;
+  width:400px;
+}
 #editor-frame {
   background: black;
   height: 100%;

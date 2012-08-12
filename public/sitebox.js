@@ -106,6 +106,10 @@ var converters = {
 
 function newEditor(){
   
+  if( localStorage.getItem("username") != clientid ){
+    return $("<div id='not-authorized'><h2>Sorry!</h2><p>You are Not Authorized to Edit this Page</p></div>");
+  }
+  
   var div = $("<div id='editor'>");
   div.append($("<button id='editor-logout-button' onclick='logout();'>Log Out</button>"));
   
@@ -122,19 +126,6 @@ function newEditor(){
                 }));
   });
   
-  div.append($("<h2>Site Wide Content</h2>"));
-  
-  $(".sitebox").each(function(index,item){
-    var key = $(item).attr('id');
-    div.append( $("<h3>").text(key), 
-                $("<textarea id='"+key+"-editor'>").text(site_content[key]).keyup(function(event){
-                  siteEditorDirty = true;
-                  var value = this.value;
-                  $("#"+key).html(converter.makeHtml(value));
-                  site_content[key] = value;
-                }));
-  });
-  
   return $("<div id='editor-frame'>").append(div);
 }
 
@@ -144,6 +135,7 @@ function saveAll(){
   
   var request = {
     location:window.location.href,
+    clientid:clientid,
     page_content:page_content,
   }
   

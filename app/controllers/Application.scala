@@ -259,23 +259,20 @@ object Application extends Controller {
   def update = Action { implicit request =>
     request.body.asJson.map { json =>
       (json \ "location").asOpt[String].map { location =>
-        (json \ "page_content").asOpt[JsObject].map{ x:JsObject => 
-          Json.stringify(x)
-        }.map{ x => 
-          session.get("user").map { user =>
-            
-            println("Credentials Received: "+user)
-            
-            val pagekey = hashKey(location,user)
-            
-            println("PageKey Calculated:"+pagekey)
-            
-            // Save Data
-            Memstore.setData(pagekey,x)
-            
-            Ok("")
-          }.getOrElse{BadRequest("User Not in Session")}
-        }.getOrElse{BadRequest("Need to Authenticate")}
+        (json \ "clientid").asOpt[String].map { clientid => 
+          (json \ "page_content").asOpt[JsObject].map{ x:JsObject => 
+            Json.stringify(x)
+          }.map{ content => 
+            session.get("user").map { user =>
+              if (user==clientid){
+                Memstore.setData(hashKey(location,user),content)
+                Ok("")
+              }else{
+                BadRequest("User Not Authenticated")
+              }
+            }.getOrElse{BadRequest("User Not in Session")}
+          }.getOrElse{BadRequest("Need to Authenticate")}
+        }.getOrElse{BadRequest("Client ID Needed")}
       }.getOrElse{BadRequest("JSON Request Must Include Location Parameter")}
     }.getOrElse{BadRequest("Expecting Json data")}
   }
