@@ -130,7 +130,7 @@ var handlers = {
     if(username==clientid){
       $("#editor-frame").html( newEditor() );
     }else{
-      $("#editor-frame").html("<div id='not-authorized'><h1>Sorry!</h1><p>Only "+username+" is authorized to edit this page</p><button onclick='logout()'>Logout</button></div>");
+      $("#editor-frame").html("<div id='not-authorized'><h1>Sorry!</h1><p>Only "+clientid+" is authorized to edit this page</p><button onclick='logout()'>Logout</button></div>");
     }
     editing = true;
     drawerOpen();
