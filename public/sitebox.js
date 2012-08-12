@@ -63,7 +63,6 @@ function ajaxLogin(){
 }
 
 function accessToken(code,window){
-  window.close();
   $.ajax({
     url: siteboxhost + "/oauth2cred",
     type: "POST",
@@ -73,19 +72,21 @@ function accessToken(code,window){
     }),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
+      localStorage.setItem("username",data["username"]);
       var response = data["response"];
       if(response=="ok"){
         $("#sitebox-login-form").remove();
         $("#editor-frame").append(newEditor());
         drawerIsOpen = true;
         editing = true;
-        localStorage.setItem("username",data["username"]);
       } else {
         alert("Login Fail");
       }
+      window.close();
     },
     error:function(x,y,z){
-      alert("Error Logging In: " + x + y + z);
+      alert("Unexpected Login Error");
+      window.close();
     }
   });
 }
