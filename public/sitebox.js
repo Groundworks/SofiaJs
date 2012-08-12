@@ -42,92 +42,17 @@ var push_notification;
 var pageEditorDirty;
 var siteEditorDirty;
 
-function pullRequest(){
-  getCredential(function(credential){
-    $.ajax({
-      url: siteboxhost+"/pullrequest",
-      type: "POST",
-      dataType: "json",
-      data: JSON.stringify({
-        location  : window.location.href,
-        credential:credential
-      }),
-      contentType: "application/json; charset=utf-8",
-      success:function(data, textStatus, jqXHR){
-        $.pnotify({'title':'Success','text':'Pull Request Complete',type:'success'});
-      },
-      error:function(jqXHR, textStatus, errorThrown){
-        $.pnotify({'title':'Success','text':'Error Submitting Pull Request',type:'error'});
-      }
-    });
-  },function(){
-    // error
-  });
-}
-
-function getPullRequests(){
-  $.ajax({
-    url: siteboxhost+"/pullrequests",
-    type: "POST",
-    dataType: "json",
-    data: JSON.stringify({
-      location : window.location.href
-    }),
-    contentType: "application/json; charset=utf-8",
-    success:function(data, textStatus, jqXHR){
-      for(key in data){
-        $.pnotify({'title':'Success','text':'Pull Request from: <a style="word-wrap:break-word;" href="'+data[key]+'">'+data[key]+'</a>',type:'success'});
-      }
-    },
-    error:function(jqXHR, textStatus, errorThrown){
-      $.pnotify({'title':'Success','text':'Pull Requests Cannot be Downloaded: '+textStatus+' <i>'+errorThrown+'</i>',type:'error'});
-    }
-  });
-}
-
-function pushToMain(){
-  getCredential(function(credential){
-    $.ajax({
-      url: siteboxhost+"/push",
-      type: "POST",
-      dataType: "json",
-      data: JSON.stringify({
-        hash     : window.location.hash,
-        location : window.location.href,
-        credential:credential
-      }),
-      contentType: "application/json; charset=utf-8",
-      success:function(data, textStatus, jqXHR){
-        $.pnotify({'title':'Success','text':'Push Complete - <a href="'+ window.location.href.split('#')[0] +'">View</a>',type:'success'});
-      },
-      error:function(jqXHR, textStatus, errorThrown){
-        $.pnotify({'title':'Success','text':'Push Error: '+textStatus+' <i>'+errorThrown+'</i>',type:'error'});
-      }
-    });
-  },function(){
-    // error
-  });
-}
-
 function saveNotice(){
   saveAll();
 }
 
 function logout(){
-  localStorage.removeItem("sitebox-credentials");
+  $.ajax({
+    url:siteboxhost + "/logout",
+  })
+  localStorage.removeItem("username");
   drawerClose();
   editing=false;
-}
-
-var credentialUrl = siteboxhost + "/cred"
-function getCredential( onSuccess, onFailure ){
-  // get credentials from store or login
-  credential = localStorage.getItem("sitebox-credentials");
-  if(credential) {
-    onSuccess(credential)
-  } else {
-    onFailure()
-  }
 }
 
 function ajaxLogin(){
@@ -154,37 +79,13 @@ function accessToken(code,window){
         $("#editor-frame").append(newEditor());
         drawerIsOpen = true;
         editing = true;
-        var credential = data["credential"];
-        localStorage.setItem("sitebox-credentials",credential);
+        localStorage.setItem("username",data["username"]);
       } else {
         alert("Login Fail");
       }
-    }
-  });
-}
-
-function guestLogin(){
-  $.ajax({
-    url: credentialUrl,
-    type: "POST",
-    dataType: "json",
-    data: JSON.stringify({
-      email : "guest",
-      paswd : ""
-    }),
-    contentType: "application/json; charset=utf-8",
-    success:function(data, textStatus, jqXHR){
-      var response = data["response"];
-      if(response=="ok"){
-        $("#sitebox-login-form").remove();
-        $("#editor-frame").append(newEditor());
-        drawerIsOpen = true;
-        var credential = data["credential"];
-        localStorage.setItem("sitebox-credentials",credential);
-      } else {
-        alert("Login Fail");
-      }
-      
+    },
+    error:function(x,y,z){
+      alert("Error Logging In: " + x + y + z);
     }
   });
 }
@@ -194,13 +95,12 @@ function newLogin(){
   var title = $("<h3>Please Login to Edit</h3>");
   var hr    = $("<hr/>");
   var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='ajaxLogin();' value='Github Login'/>");
-  var guest  = $("<input style='display:inline;' id='guest-login-button' type='button' onclick='guestLogin()' value='Guest Login'/>");
-  form.append(title,hr,button,guest);
+  form.append(title,hr,button);
   return form;
 }
 
 var converters = {
-  "DIV":function(item,content){item.html(converter.makeHtml(content));},
+  "DIV"  :function(item,content){item.html(converter.makeHtml(content));},
   "STYLE":function(item,content){item.text(content);}
 }
 
@@ -239,20 +139,12 @@ function newEditor(){
 }
 
 function saveAll(){
-  var credential = localStorage.getItem("sitebox-credentials");
   
   var path = window.location.href.split('#')[0]
   
   var request = {
-    credential:credential,
     location:window.location.href,
     page_content:page_content,
-  }
-  
-  var site_request = {
-    credential:credential,
-    location:window.location.href,
-    site_content:site_content
   }
   
   var percent = 0;
@@ -269,6 +161,7 @@ function saveAll(){
   
   var success = {};
   success.title = "Success!";
+  success.text = "Your Update Has Been Saved";
   success.type = "success";
   success.hide = true;
   success.closer = true;
@@ -296,65 +189,16 @@ function saveAll(){
     data: JSON.stringify(request),
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, jqXHR){
-      var good = function(){
-        log("Contents Saved");
-        window.location.hash = data["hashbang"];
-        role = data["role"];
-        
-        console.log(data);
-        
-        if(role=="push"){
-          success.text  = "<p>Your changes has been saved but will not \
-                           appear as the main version at:\
-                           <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
-                           You must <button onclick='pushToMain()'>Push Changes</button></p> \
-                           <p style='word-wrap:break-word;'>The current version is accessible any time at:\
-                           <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
-                           <div style='margin-top:5px; text-align:right;'> \
-                           </div>";
-        } else if (role=="pull-request-only") {
-          success.text  = "<p>Your changes has been saved but will not \
-                           appear as the main version at:\
-                           <ul><li><a href='"+ path +"'>"+ path +"</a></li></ul>\
-                           You must request the owner to push changes. <button onclick='pullRequest()'>Request Push</button></p> \
-                           <p style='word-wrap:break-word;'>The current version is accessible any time at:\
-                           <ul><li style='word-wrap:break-word;'><a href='"+ window.location.href +"'>"+ window.location.href +"</a></li></ul></p> \
-                           <div style='margin-top:5px; text-align:right;'> \
-                           </div>";
-        } else {
-          alert("Error 923847");
-        }
-        
-        push_notification.pnotify(success);
-      }
-      pageEditorDirty = false;
-      if(siteEditorDirty){
-        $.ajax({
-          url: siteboxhost + "/site",
-          type: "POST",
-          dataType: "json",
-          data: JSON.stringify(site_request),
-          contentType: "application/json; charset=utf-8",
-          success:function(data,textStatus,jqXHR){
-            good();
-            siteEditorDirty = false;
-          },
-          error:function(jqXHR,textStatus,errorThrown){
-            log("Error");
-            push_notification.pnotify(failure);
-          }
-        });
-      }else{
-        good();
-      }
+      log("Contents Saved");
+      push_notification.pnotify(success);
     },
     error:function(jqXHR, textStatus, errorThrown){
       log("Not Saved");
+      log(textStatus);
+      log(errorThrown);
       push_notification.pnotify(failure);
     }
   });
-  
-  
 }
 
 function drawerClose(){
@@ -402,15 +246,15 @@ function toggleEdit(){
   }else{
     $("body").addClass("editing");
     var frame = $("<div id='editor-frame'>");
-    getCredential(function(credential){
+    if(localStorage.getItem("username")){
       $("html").append( frame.append(newEditor()) );
       editing = true;
       drawerOpen();
-    },function(){
+    }else{
       $("html").append( frame.append(newLogin()) );
       drawerOpen();
       $("#sitebox-login-key").select();
-    });
+    };
   }
 }
 
@@ -419,13 +263,12 @@ function log(message){
 }
 
 function loadContent(){
+  
   var hashbang= window.location.hash;
   var pagekey = window.location.href;
   var request = {
-    location: pagekey,
-    version : "current",
-    content : "page",
-    hash    : hashbang
+    location : pagekey,
+    clientid : clientid
   };
   
   log("Loading Page Content for: " + pagekey);
@@ -454,42 +297,10 @@ function loadContent(){
       log("There was an Error: " + textStatus);
     }
   });
-
-  log("Loading Site-Wide Content");
-  $.ajax({
-    url:  posturl,
-    type: "POST",
-    dataType: "json",
-    data: JSON.stringify({
-      version :"current",
-      location:window.location.href,
-      content :"site",
-      hash    : hashbang
-    }),
-    contentType: "application/json; charset=utf-8",
-    success:function(data, textStatus, jqXHR){
-      log("Json Response Containing Site-Wide Content Received")
-      
-      for(key in data){
-        log("Inserting Site-Wide Content into Element: "+key)
-        value = data[key];
-        var item = $("#"+key);
-        converters[item[0].nodeName](item,value);
-      }
-      
-      log("Site-Wide Content Loaded");
-      
-      site_content = data;
-    },
-    error:function(jqXHR, textStatus, errorThrown){
-      log("There was an Error: " + textStatus);
-    }
-  });
 }
 
 $(function(){
   
-  getPullRequests();
   loadContent();
   
   $(window).bind('hashchange', function() {
