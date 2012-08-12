@@ -94,13 +94,6 @@ object Authenticator extends Controller {
   }
   
   implicit val timeout : Timeout = Timeout(Duration(10,"seconds"))
-  def oauth2Preflight = Action {
-    Ok("").withHeaders(
-      "Access-Control-Allow-Origin"->"*",
-      "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-      "Access-Control-Allow-Methods"->"POST"
-    )
-  }
   def oauth2 = Action { implicit request =>
     Async {
       new AkkaPromise( githubActorRef ? request.body ) map {
@@ -189,6 +182,14 @@ object Memstore {
 object Application extends Controller {
   
   val BadRequestExpectingJson = BadRequest("Expecting JSON")
+  
+  def preflight = Action {
+    Ok("").withHeaders(
+      "Access-Control-Allow-Origin"->"*",
+      "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
+      "Access-Control-Allow-Methods"->"POST"
+    )
+  }
   
   def current = Action {
     Assets.at(path="/public", "current.js")
