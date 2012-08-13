@@ -106,14 +106,16 @@ object Memstore {
     }
   }
   
-  def setData(file:String,jsObject:String) {
+  def setData(file:String,location:String,userid:String,jsObject:String) {
     DB.withConnection { implicit connection => 
       SQL("DELETE from page WHERE pagekey={pagekey}").on("pagekey"->file).execute()
       SQL(
-        "INSERT INTO page (content,pagekey) VALUES ({content},{pagekey})"
+        "INSERT INTO page (content,pagekey,location,userid) VALUES ({content},{pagekey},{location},{userid})"
       ).on(
           "pagekey" -> file,
-          "content" -> jsObject
+          "content" -> jsObject,
+          "location"-> location,
+          "userid"  -> userid
       ).executeInsert()
     }
   }
@@ -220,7 +222,7 @@ object Application extends Controller {
           }.map{ content => 
             session.get("user").map { user =>
               if (user==clientid){
-                Memstore.setData(hashKey(location,user),content)
+                Memstore.setData(hashKey(location,user),location,user,content)
                 val origin = request.headers.get("origin").getOrElse{"*"}
                 Ok(jsonify("response"->"ok", "status"->"okay"))
               }else{
