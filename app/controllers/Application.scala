@@ -38,10 +38,8 @@ class GithubActor extends Actor {
     body.asJson.map { json => 
       (json \ "code").asOpt[String].map { code =>
         githubVerifyOAuth(code,(name:String)=>{
-          println("Called Success Callback")
           sender ! Success(name)
         },(error:String)=>{
-          println("Called Failure Callback")
           sender ! Failure(error)
         })
       }.getOrElse{
@@ -56,7 +54,6 @@ class GithubActor extends Actor {
   val githubClientSecret = "1f9b2f31289ffcedc6b96b28b1599b353d74ac47"
   
   def githubVerifyOAuth(code:String,callback:String=>Unit,error:String=>Unit) = {
-    println("Using Github Verification code: "+code)
     WS.url("https://github.com/login/oauth/access_token").withHeaders(
       "Accept" -> "application/json"
     ).post(
@@ -68,19 +65,16 @@ class GithubActor extends Actor {
     ).map { response => 
       print( "/access_token Response: " + Json.stringify(response.json) )
       (response.json \ "access_token").asOpt[String].map{ accessToken =>
-        println("Using Access Github Token: "+accessToken)
         WS.url("https://api.github.com/user").withHeaders(
           "Accept" -> "application/json"
         ).withQueryString(
           "access_token" -> accessToken
         ).get().map { response => 
-          println( "/user Response: " + Json.stringify(response.json) )
           (response.json \ "login").asOpt[String].map{ login => 
-            println("Using Login: "+login)
             callback(login)
           }.getOrElse{error("No login parameter in JSON response")}
         } // Promise Expired
-      }.getOrElse(error("Missing Access Token")) // No Access Token
+      }.getOrElse(error("Missing Access Token"))
     } // Promise Expired
   }
 }
@@ -138,7 +132,7 @@ object Application extends Controller {
   }
   
   implicit val timeout : Timeout = Timeout(Duration(10,"seconds"))
-  def oauth2 = Action { implicit request =>
+  def authorize = Action { implicit request =>
     Async {
       new AkkaPromise( githubActorRef ? request.body ) map {
         case Success(message) => Ok(
@@ -153,18 +147,14 @@ object Application extends Controller {
   }
   
   def logout = Action {
-    println("User Logged Out")
-    Ok("").withNewSession;
+    NoContent.withNewSession;
   }
   
   def login = Action { implicit request =>
-    println("Checking Login...")
     val username = request.session.get("user").orNull
     if(username==null){
-      println("User Not Logged In")
       BadRequest("")
     }else{
-      println("User Logged in as "+username)
       Ok(username).withSession("user"->username)
     }
   }
@@ -176,25 +166,7 @@ object Application extends Controller {
   }
   
   def preflight(default:String) = Action { request =>
-    val origin = request.headers.get("origin").getOrElse{"*"}
-    crossSiteOk(Ok(""))
-  }
-  
-  def current = Action {
-    Assets.at(path="/public", "current.js")
-  }
-  
-  def digest(preimage:String) = {
-    MessageDigest.getInstance("SHA1").digest(preimage.getBytes).map("%02X".format(_)).mkString
-  }
-  
-  def auth = Action { request =>
-    println(request)
-    val response = """{
-      "response":"ok",
-      "role":"editor"
-    }"""
-    Ok(response)
+    crossSiteOk(NoContent)
   }
   
   def index = Action {
@@ -202,7 +174,6 @@ object Application extends Controller {
   }
   
   def page(page:String) = Action {
-    
     Ok( views.html.example() )
   }
   
@@ -213,10 +184,9 @@ object Application extends Controller {
         (json \ "clientid").asOpt[String].map { user =>
           val pagekey = hashKey(location,user)
           val page = Memstore.getData(pagekey) match {
-            case Some(page:String) => 
-              page
+            case Some(page:String) => page
             case _ => Json.stringify(Memstore.load("/default"))
-          } 
+          }
           Ok(page)
         }.getOrElse{BadRequest("Request Requires 'clientid' Parameter")}
       }.getOrElse{BadRequest("Request Requires 'location' Parameter")}
@@ -224,15 +194,11 @@ object Application extends Controller {
   }
   
   def hashKey(location:String,user:String) = {
-    
     val url  = new URL(location)
-    
     var prot = url.getProtocol()
     val path = url.getPath()
     val host = url.getHost()
-    
     val preimage = "%s:%s:%s:%s" format(user,prot,path,host)
-    
     MessageDigest.getInstance(
       "SHA1"
     ).digest(
@@ -244,9 +210,7 @@ object Application extends Controller {
   
   // Serve Content via JSON API
   def update = Action { implicit request =>
-    println("Recieving Update")
     request.body.asJson.map { json =>
-      println("Request: "+Json.stringify(json))
       (json \ "location").asOpt[String].map { location =>
         (json \ "clientid").asOpt[String].map { clientid => 
           (json \ "page_content").asOpt[JsObject].map{ x:JsObject => 

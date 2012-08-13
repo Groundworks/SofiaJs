@@ -5,14 +5,15 @@
 # Home page
 GET     /                           controllers.Application.index
 GET     /oauth2                     controllers.Assets.at(path="/public", file="oauthCallback.html")
-POST    /oauth2cred                 controllers.Application.oauth2
+POST    /authorize                  controllers.Application.authorize
 GET     /logout                     controllers.Application.logout
 GET     /login                      controllers.Application.login
-POST    /auth                       controllers.Application.auth
 POST    /content                    controllers.Application.content
 POST    /update                     controllers.Application.update
-OPTIONS /*default                   controllers.Application.preflight(default)
 GET     /loader                     controllers.Application.loader
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET     /current.js                 controllers.Assets.at(path="/public", file="current.js")
+
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
+
 GET     /*default                   controllers.Application.page(default)
+OPTIONS /*default                   controllers.Application.preflight(default)

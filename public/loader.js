@@ -83,7 +83,7 @@ function authenticate(code){
   console.log("Authenciate");
   
   $.ajax({
-    url: siteboxhost + "/oauth2cred",
+    url: siteboxhost + "/authorize",
     type: "POST",
     dataType: "json",
     data: JSON.stringify({
