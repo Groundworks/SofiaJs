@@ -173,6 +173,7 @@ function drawerClose(){
 }
 
 function drawerOpen(){
+  if (drawerIsOpen) return;
   
   if(push_notification){push_notification.pnotify_remove();}
   
