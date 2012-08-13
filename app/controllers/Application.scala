@@ -181,12 +181,16 @@ object Application extends Controller {
   }
   
   def sanitizeLocation(location:String) = {
-    val length = location.length
-	  if( location.charAt(length-1) == '/' ){
+  val length = location.length
+	  val location_normal = if( location.charAt(length-1) == '/' ){
   	  location.substring(0,location.length-2)
 	  } else {
       location
     }
+    
+    println("Normalizing: %s -> %S", location, location_normal)
+    
+    location_normal
   }
   
   // Serve Content via JSON API
