@@ -180,10 +180,20 @@ object Application extends Controller {
     Ok( views.html.example() )
   }
   
+  def sanitizeLocation(location:String) = {
+    val length = location.length
+	  if( location.charAt(length-1) == '/' ){
+  	  location.substring(0,location.length-2)
+	  } else {
+      location
+    }
+  }
+  
   // Serve Content via JSON API
   def content = Action { implicit request =>
     crossSiteOk(request.body.asJson.map { json =>
-      (json \ "location").asOpt[String].map { location =>
+      (json \ "location").asOpt[String].map { _location =>
+  		  val location = sanitizeLocation(_location)
         (json \ "clientid").asOpt[String].map { user =>
           Ok(Memstore.getData(hashKey(location,user)) match {
             case Some(page:String) => page
@@ -215,7 +225,8 @@ object Application extends Controller {
   
   def update = Action { implicit request =>
     request.body.asJson.map { json =>
-      (json \ "location").asOpt[String].map { location =>
+      (json \ "location").asOpt[String].map { _location =>
+        val location = sanitizeLocation(_location)
         (json \ "clientid").asOpt[String].map { clientid => 
           (json \ "page_content").asOpt[JsObject].map{ x:JsObject => 
             Json.stringify(x)
