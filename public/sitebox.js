@@ -103,7 +103,7 @@ function saveAll(){
   var request = {
     location:path,
     clientid:clientid,
-    page_content:page_content,
+    page_content:page_content
   }
   
   log("Saving Updated Contents...")

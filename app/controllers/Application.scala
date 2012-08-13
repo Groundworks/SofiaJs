@@ -85,12 +85,56 @@ class GithubActor extends Actor {
   }
 }
 
-object Authenticator extends Controller {
+object Memstore {
+  
+  implicit def fileToString(file:Option[java.io.File]): String = {
+    scala.io.Source.fromFile(file.get).mkString
+  }
+  
+  implicit def jsValuetoString(jsValue:JsValue):String = {
+    jsValue.as[String]
+  }
+  
+  def load(file:String) = {
+    Json.parse( Play.getExistingFile("resources/"+file+".json") )
+  }
+  
+  def getData(file:String): Option[String] = {
+    DB.withConnection { implicit connection => 
+      SQL(
+        "SELECT content FROM page WHERE pagekey={pagekey}"
+      ).on(
+        "pagekey"->file
+      ).as( 
+        str("content") singleOpt
+      )
+    }
+  }
+  
+  def setData(file:String,jsObject:String) {
+    DB.withConnection { implicit connection => 
+      SQL("DELETE from page WHERE pagekey={pagekey}").on("pagekey"->file).execute()
+      SQL(
+        "INSERT INTO page (content,pagekey) VALUES ({content},{pagekey})"
+      ).on(
+          "pagekey" -> file,
+          "content" -> jsObject
+      ).executeInsert()
+    }
+  }
+  
+}
+
+object Application extends Controller {
   
   val githubActorRef = system.actorOf( Props[GithubActor], name="github" )
   
-  def oauth2Callback = Action {
-    Ok(views.html.oauthCallback())
+  def crossSiteOk(response:PlainResult) = {
+    response.withHeaders(
+      "Access-Control-Allow-Origin"->"*",
+      "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
+      "Access-Control-Allow-Methods"->"POST"
+    )
   }
   
   implicit val timeout : Timeout = Timeout(Duration(10,"seconds"))
@@ -101,10 +145,6 @@ object Authenticator extends Controller {
           """{"response":"ok","username":"%s"}""" format message
           ).withSession(
             "user" -> message
-          ).withHeaders(
-            "Access-Control-Allow-Origin"->"*",
-            "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-            "Access-Control-Allow-Methods"->"POST"
           )
         case Failure(message) => BadRequest("Bad "+message)
         case _ => BadRequest("Internal Failure")
@@ -128,72 +168,7 @@ object Authenticator extends Controller {
       Ok(username).withSession("user"->username)
     }
   }
-  
-}
-
-object Memstore {
-  
-  implicit def fileToString(file:Option[java.io.File]): String = {
-    scala.io.Source.fromFile(file.get).mkString
-  }
-  
-  implicit def jsValuetoString(jsValue:JsValue):String = {
-    jsValue.as[String]
-  }
-  
-  def load(file:String) = {
-    Json.parse( Play.getExistingFile("resources/"+file+".json") )
-  }
-  
-  def setPullRequest(from:String,to:String){
-    println("Pull Request Submitted from: "+from+" to: "+to)
-    DB.withConnection { implicit connection => 
-      removePullRequest(from)
-      SQL("""
-        INSERT INTO pullrequest (fromkey,tokey) VALUES ({fromkey},{tokey})
-        """).on("fromkey"->from,"tokey"->to).executeInsert();
-    }
-  }
-  
-  def getPullRequests(to:String):List[String] = {
-    DB.withConnection { implicit connection => 
-      SQL("""SELECT fromkey FROM pullrequest WHERE tokey={tokey}""").on("tokey"->to).as( str("fromkey") * ).map {
-        case x:String => x
-      }
-    }
-  }
-  
-  def removePullRequest(from:String){
-    println("Pull Request Submitted from: "+from)
-    DB.withConnection { implicit connection => 
-      SQL("DELETE from pullrequest WHERE fromkey={fromkey}").on("fromkey"->from).execute()
-    }
-  }
-  
-  def getData(file:String): Option[String] = {
-    DB.withConnection { implicit connection => 
-      SQL("""
-        SELECT content FROM page WHERE pagekey={pagekey}
-        """).on("pagekey"->file).as( str("content") singleOpt )
-    }
-  }
-  
-  def setData(file:String,jsObject:String) {
-    DB.withConnection { implicit connection => 
-      SQL("DELETE from page WHERE pagekey={pagekey}").on("pagekey"->file).execute()
-      SQL("""
-        INSERT INTO page (content,pagekey) VALUES ({content},{pagekey})
-        """).on(
-          "pagekey" -> file,
-          "content" -> jsObject
-        ).executeInsert()
-      }
-  }
-  
-}
-
-object Application extends Controller {
-  
+    
   val BadRequestExpectingJson = BadRequest("Expecting JSON")
   
   def loader = Action {
@@ -202,12 +177,7 @@ object Application extends Controller {
   
   def preflight(default:String) = Action { request =>
     val origin = request.headers.get("origin").getOrElse{"*"}
-    Ok("").withHeaders(
-      "Access-Control-Allow-Origin" ->origin,
-      "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-      "Access-Control-Allow-Methods"->"GET,POST",
-      "Access-Control-Allow-Credentials" -> "true"
-    )
+    crossSiteOk(Ok(""))
   }
   
   def current = Action {
@@ -236,17 +206,9 @@ object Application extends Controller {
     Ok( views.html.example() )
   }
   
-  def options = Action {
-    Ok("").withHeaders( 
-      "Access-Control-Allow-Origin"->"*",
-      "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-      "Access-Control-Allow-Methods"->"POST"
-    )
-  }
-  
   // Serve Content via JSON API
   def content = Action { implicit request =>
-    request.body.asJson.map { json =>
+    crossSiteOk(request.body.asJson.map { json =>
       (json \ "location").asOpt[String].map { location =>
         (json \ "clientid").asOpt[String].map { user =>
           val pagekey = hashKey(location,user)
@@ -255,15 +217,10 @@ object Application extends Controller {
               page
             case _ => Json.stringify(Memstore.load("/default"))
           } 
-                   
-          Ok(page).withHeaders(
-            "Access-Control-Allow-Origin"->"*",
-            "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-            "Access-Control-Allow-Methods"->"POST"
-          )
-        }.getOrElse{BadRequest("")}
-      }.getOrElse{BadRequest("JSON Request Must Include Location Parameter")}
-    }.getOrElse{BadRequest("Expecting Json data")}
+          Ok(page)
+        }.getOrElse{BadRequest("Request Requires 'clientid' Parameter")}
+      }.getOrElse{BadRequest("Request Requires 'location' Parameter")}
+    }.getOrElse{BadRequestExpectingJson})
   }
   
   def hashKey(location:String,user:String) = {
@@ -299,19 +256,14 @@ object Application extends Controller {
               if (user==clientid){
                 Memstore.setData(hashKey(location,user),content)
                 val origin = request.headers.get("origin").getOrElse{"*"}
-                Ok("").withHeaders(
-                  "Access-Control-Allow-Origin" ->origin,
-                  "Access-Control-Allow-Headers"->"Origin, Content-Type, Accept",
-                  "Access-Control-Allow-Methods"->"POST",
-                  "Access-Control-Allow-Credentials" -> "true"
-                )
+                Ok("""{"response":"ok"}""")
               }else{
-                BadRequest("User Not Authenticated")
+                Unauthorized("User Not Authenticated")
               }
-            }.getOrElse{println("User Not in Session");BadRequest("User Not in Session")}
-          }.getOrElse{println("Need to Authenticate");BadRequest("Need to Authenticate")}
-        }.getOrElse{println("Client ID Needed");BadRequest("Client ID Needed")}
-      }.getOrElse{println("JSON Request Must Include Location");BadRequest("JSON Request Must Include Location")}
-    }.getOrElse{println("Expecting Json data");BadRequest("Expecting Json data")}
+            }.getOrElse{BadRequest("User Not in Session")}
+          }.getOrElse{BadRequest("Need to Authenticate")}
+        }.getOrElse{BadRequest("Client ID Needed")}
+      }.getOrElse{BadRequest("JSON Request Must Include Location")}
+    }.getOrElse{BadRequestExpectingJson}
   }
 }
