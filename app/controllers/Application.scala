@@ -50,8 +50,9 @@ class GithubActor extends Actor {
     }
   }
   
-  val githubClientId     = "ec46f5e732b30cc3caca"
-  val githubClientSecret = "1f9b2f31289ffcedc6b96b28b1599b353d74ac47"
+  val config = Play.current.configuration
+  val githubClientId     = config.getString("sjs.github.clientid").get
+  val githubClientSecret = config.getString("sjs.github.clientsecret").get
   
   def githubVerifyOAuth(code:String,callback:String=>Unit,error:String=>Unit) = {
     WS.url("https://github.com/login/oauth/access_token").withHeaders(
@@ -141,7 +142,7 @@ object Application extends Controller {
           "user" -> message
         )
         case Failure(message) => BadRequest("Bad "+message)
-        case _ => BadRequest("Internal Failure")
+        case _ => InternalServerError("Internal Message Failure")
       }
     }
   }
@@ -210,7 +211,6 @@ object Application extends Controller {
     Json.stringify(Json.toJson(Map(seq:_*)))
   }
   
-  // Serve Content via JSON API
   def update = Action { implicit request =>
     request.body.asJson.map { json =>
       (json \ "location").asOpt[String].map { location =>
