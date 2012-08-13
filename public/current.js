@@ -1,4 +1,4 @@
-var siteboxhost = "http://sofiajs.com";
+var siteboxhost = "http://api.sofiajs.com";
 var updateurl = siteboxhost + "/update";
 var posturl = siteboxhost + "/content";
 

@@ -1,4 +1,4 @@
-var siteboxhost = "http://sofiajs.com"
+var siteboxhost = "http://api.sofiajs.com"
 var auth_window;
 
 var handlers = {
@@ -50,7 +50,7 @@ var success = {
 }
 
 function update(request){
-  var updateurl = "http://sofiajs.com/update";
+  var updateurl = "http://api.sofiajs.com/update";
   
   $.ajax({
     url:  updateurl,

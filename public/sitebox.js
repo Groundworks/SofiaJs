@@ -257,7 +257,7 @@ $(function(){
     loadContent();
   });
   
-  var iframe = $("<iframe id='sofiajs-api' style='display:none;' src='http://sofiajs.com/loader'>");
+  var iframe = $("<iframe id='sofiajs-api' style='display:none;' src='http://api.sofiajs.com/loader'>");
   $("html").append(iframe);
   
 });
