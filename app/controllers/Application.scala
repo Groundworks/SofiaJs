@@ -136,10 +136,10 @@ object Application extends Controller {
     Async {
       new AkkaPromise( githubActorRef ? request.body ) map {
         case Success(message) => Ok(
-          """{"response":"ok","username":"%s"}""" format message
-          ).withSession(
-            "user" -> message
-          )
+          jsonify("response" -> "ok","username" -> message)
+        ).withSession(
+          "user" -> message
+        )
         case Failure(message) => BadRequest("Bad "+message)
         case _ => BadRequest("Internal Failure")
       }
@@ -182,12 +182,10 @@ object Application extends Controller {
     crossSiteOk(request.body.asJson.map { json =>
       (json \ "location").asOpt[String].map { location =>
         (json \ "clientid").asOpt[String].map { user =>
-          val pagekey = hashKey(location,user)
-          val page = Memstore.getData(pagekey) match {
+          Ok(Memstore.getData(hashKey(location,user)) match {
             case Some(page:String) => page
-            case _ => Json.stringify(Memstore.load("/default"))
-          }
-          Ok(page)
+            case None => Json.stringify(Memstore.load("/default"))
+          })
         }.getOrElse{BadRequest("Request Requires 'clientid' Parameter")}
       }.getOrElse{BadRequest("Request Requires 'location' Parameter")}
     }.getOrElse{BadRequestExpectingJson})
@@ -208,6 +206,10 @@ object Application extends Controller {
     ).mkString
   }
   
+  implicit def jsonify(seq:(String,String)*): String = {
+    Json.stringify(Json.toJson(Map(seq:_*)))
+  }
+  
   // Serve Content via JSON API
   def update = Action { implicit request =>
     request.body.asJson.map { json =>
@@ -220,7 +222,7 @@ object Application extends Controller {
               if (user==clientid){
                 Memstore.setData(hashKey(location,user),content)
                 val origin = request.headers.get("origin").getOrElse{"*"}
-                Ok("""{"response":"ok"}""")
+                Ok(jsonify("response"->"ok", "status"->"okay"))
               }else{
                 Unauthorized("User Not Authenticated")
               }
