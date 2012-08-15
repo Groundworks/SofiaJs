@@ -20,7 +20,7 @@ var handlers = {
   },
   "oauth":function(code){
     authenticate(code);
-  }
+  },
 }
 
 window.onmessage = function(event){
@@ -51,14 +51,14 @@ var success = {
 
 function update(request){
   var updateurl = "http://api.sofiajs.com/update";
-  
-  $.ajax({
+  var geturl = $.ajax({
     url:  updateurl,
     type: "POST",
     dataType: "json",
     data: JSON.stringify(request),
     contentType: "application/json; charset=utf-8",
-    success:function(data, textStatus, jqXHR){
+    success:function(data, textStatus, XMLHttpRequest){
+      ipc("location",data["location"]);
       ipc("notice",success);
     },
     error:function(jqXHR, textStatus, errorThrown){

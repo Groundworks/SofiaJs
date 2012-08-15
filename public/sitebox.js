@@ -56,12 +56,18 @@ function logout(){
   editing=false;
 }
 
+function guest(){
+  $("#editor-frame").html( newEditor() );
+  editing = true;
+}
+
 function newLogin(){
   var form  = $("<form id='sitebox-login-form'>");
   var title = $("<h3>Please Login to Edit</h3>");
   var hr    = $("<hr/>");
   var button = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='authenticate();' value='Github Login'/>");
-  form.append(title,hr,button);
+  var guest = $("<input style='display:inline; margin-left:0; margin-right:10px;' type='button' id='sitebox-login-button' onclick='guest();' value='Guest Login'/>");
+  form.append(title,hr,button,guest);
   return form;
 }
 
@@ -103,7 +109,8 @@ function saveAll(){
   var request = {
     location:path,
     clientid:clientid,
-    page_content:page_content
+    page_content:page_content,
+    publish:"yes"
   }
   
   log("Saving Updated Contents...")
@@ -127,11 +134,7 @@ var handlers = {
     $("#sitebox-login-key").select();
   },
   "login ok":function(username){
-    if(username==clientid){
-      $("#editor-frame").html( newEditor() );
-    }else{
-      $("#editor-frame").html("<div id='not-authorized'><h1>Sorry!</h1><p>Only "+clientid+" is authorized to edit this page</p><button onclick='logout()'>Logout</button></div>");
-    }
+    $("#editor-frame").html( newEditor() );
     editing = true;
     drawerOpen();
     if(auth_window) auth_window.close();
@@ -141,6 +144,9 @@ var handlers = {
   },
   "oauth":function(m){
     ipc("oauth",m);
+  },
+  "location":function(location){
+    window.location.href=location;
   }
 };
 
@@ -214,13 +220,14 @@ function log(message){
 function loadContent(){
   
   var hashbang= window.location.hash;
-  var pagekey = window.location.href;
+  var pagekey = window.location.href.split("#")[0];
   var request = {
     location : pagekey,
+    version  : hashbang,
     clientid : clientid
   };
   
-  log("Loading Page Content for: " + pagekey);
+  log("Loading Page Content for: " + pagekey + hashbang);
   
   $.ajax({
     url:  posturl,

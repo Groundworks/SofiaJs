@@ -94,32 +94,60 @@ object Memstore {
     Json.parse( Play.getExistingFile("resources/"+file+".json") )
   }
   
-  def getData(file:String): Option[String] = {
+  def getData(location:String,version:String,clientid:String): Option[String] = {
+    Logger.info("DB GET %s:%s:%s" format (location,version,clientid))
     DB.withConnection { implicit connection => 
       SQL(
-        "SELECT content FROM page WHERE pagekey={pagekey}"
+        "SELECT content FROM page WHERE location={location} AND version={version} AND userid={clientid}"
       ).on(
-        "pagekey"->file
+        "location" -> location,
+        "version"  -> version,
+        "clientid" -> clientid
       ).as( 
         str("content") singleOpt
       )
     }
   }
   
-  def setData(file:String,location:String,userid:String,jsObject:String) {
+  def setData(file:String,location:String,version:String,userid:String,jsObject:String) {
+    Logger.info("DB SET %s:%s:%s" format (location,version,userid))
     DB.withConnection { implicit connection => 
       SQL("DELETE from page WHERE pagekey={pagekey}").on("pagekey"->file).execute()
       SQL(
-        "INSERT INTO page (content,pagekey,location,userid) VALUES ({content},{pagekey},{location},{userid})"
+        "INSERT INTO page (content,pagekey,location,version,userid) VALUES ({content},{pagekey},{location},{version},{userid})"
       ).on(
           "pagekey" -> file,
           "content" -> jsObject,
           "location"-> location,
+          "version" -> version,
           "userid"  -> userid
       ).executeInsert()
     }
   }
   
+  def getHead(location:String,clientid:String): Option[String] = {
+    DB.withConnection { implicit connection => 
+      SQL(
+        "SELECT version FROM head WHERE location={location} AND clientid={clientid}"
+      ).on(
+        "location" -> location,
+        "clientid" -> clientid
+      ).as( 
+        str("version") singleOpt
+      )
+    }
+  }
+  
+  def setHead(location:String,clientid:String,version:String){
+    DB.withConnection{ implicit connection =>
+      SQL("DELETE FROM head WHERE location={location}").on("location"->location).execute();
+      SQL("INSERT INTO head (location,version,clientid) VALUES ({location},{version},{clientid})").on(
+        "location"->location,
+        "version" ->version,
+        "clientid"->clientid
+      ).executeInsert()
+    }
+  }
 }
 
 object Application extends Controller {
@@ -182,9 +210,9 @@ object Application extends Controller {
   
   def sanitizeLocation(location:String) = {
   val length = location.length
-	if( location.charAt(length-1) == '/' ){
-  	  location.substring(0,location.length-1)
-	  } else {
+  if( location.charAt(length-1) == '/' ){
+      location.substring(0,location.length-1)
+    } else {
       location
     }
   }
@@ -193,9 +221,17 @@ object Application extends Controller {
   def content = Action { implicit request =>
     crossSiteOk(request.body.asJson.map { json =>
       (json \ "location").asOpt[String].map { _location =>
-  		  val location = sanitizeLocation(_location)
+        val location = sanitizeLocation(_location)
         (json \ "clientid").asOpt[String].map { user =>
-          Ok(Memstore.getData(hashKey(location,user)) match {
+          val version:String = (json \ "version").asOpt[String].map { version =>
+            if(version=="" || version=="#"){
+              Memstore.getHead(location,user).getOrElse{""}
+            }else{
+              version
+            }
+          }.getOrElse{""}
+          println("Load Location: %s%s" format (location,version))
+          Ok(Memstore.getData(location,version,user) match {
             case Some(page:String) => page
             case None => Json.stringify(Memstore.load("/default"))
           })
@@ -204,16 +240,28 @@ object Application extends Controller {
     }.getOrElse{BadRequestExpectingJson})
   }
   
-  def hashKey(location:String,user:String) = {
+  def hashKey(location:String,version:String,user:String) = {
     val url  = new URL(location)
     var prot = url.getProtocol()
     val path = url.getPath()
     val host = url.getHost()
-    val preimage = "%s:%s:%s:%s" format(user,prot,path,host)
+    
+    val preimage = "%s:%s:%s:%s%s" format(user,prot,path,host,version)
+    
     MessageDigest.getInstance(
       "SHA1"
     ).digest(
       preimage.getBytes
+    ).map(
+      "%02X".format(_)
+    ).mkString
+  }
+  
+  def pageHash(page:String) = {
+    MessageDigest.getInstance(
+      "SHA1"
+    ).digest(
+      page.getBytes
     ).map(
       "%02X".format(_)
     ).mkString
@@ -231,15 +279,29 @@ object Application extends Controller {
           (json \ "page_content").asOpt[JsObject].map{ x:JsObject => 
             Json.stringify(x)
           }.map{ content => 
-            session.get("user").map { user =>
+            val version = "#!sofiajs/" + pageHash(content)
+            val updated = location + version
+            println("Update Location: " + updated)
+            Memstore.setData(hashKey(location,version,clientid),location,version,clientid,content)
+            request.session.get("user").map { user =>
               if (user==clientid){
-                Memstore.setData(hashKey(location,user),location,user,content)
-                val origin = request.headers.get("origin").getOrElse{"*"}
-                Ok(jsonify("response"->"ok", "status"->"okay"))
-              }else{
-                Unauthorized("User Not Authenticated")
+                (json \ "publish").asOpt[String].map { publish =>
+                  Logger.debug("Publish Update: %s" format publish)
+                  if(publish equals "yes"){
+                    Memstore.setHead(location,clientid,version)
+                  }
+                }.getOrElse{
+                  Logger.debug("Not Published")
+                }
+              } else {
+                Logger.debug("Non-Owner Update Not Publisehd")
               }
-            }.getOrElse{BadRequest("User Not in Session")}
+            }.getOrElse{
+              Logger.debug("Anonymous Update Not Published")
+            }
+            Created(
+              jsonify("response"->"ok","location"-> updated)
+            ).withHeaders("Location" -> updated )
           }.getOrElse{BadRequest("Need to Authenticate")}
         }.getOrElse{BadRequest("Client ID Needed")}
       }.getOrElse{BadRequest("JSON Request Must Include Location")}
