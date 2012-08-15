@@ -281,6 +281,7 @@ object Application extends Controller {
           }.map{ content => 
             val version = "#!sofiajs/" + pageHash(content)
             val updated = location + version
+            var published = "no"
             println("Update Location: " + updated)
             Memstore.setData(hashKey(location,version,clientid),location,version,clientid,content)
             request.session.get("user").map { user =>
@@ -289,6 +290,7 @@ object Application extends Controller {
                   Logger.debug("Publish Update: %s" format publish)
                   if(publish equals "yes"){
                     Memstore.setHead(location,clientid,version)
+                    published = "yes"
                   }
                 }.getOrElse{
                   Logger.debug("Not Published")
@@ -300,7 +302,7 @@ object Application extends Controller {
               Logger.debug("Anonymous Update Not Published")
             }
             Created(
-              jsonify("response"->"ok","location"-> updated)
+              jsonify("response"->"ok","location"-> updated, "published"->published)
             ).withHeaders("Location" -> updated )
           }.getOrElse{BadRequest("Need to Authenticate")}
         }.getOrElse{BadRequest("Client ID Needed")}

@@ -49,6 +49,24 @@ var success = {
   type: 'success',
 }
 
+function published(location) {
+  return {
+    title: "Updated",
+    type: "success",
+    text: "Your update has been published and is avaialble at\
+           <ul><li><a style='word-wrap:break-word;' href='"+location+"'>"+location+"</a></li></ul>"
+  }
+}
+
+function pending(clientid,location) {
+  return {
+    title: "Saved...",
+    type: "success",
+    text: "Your update has been saved, but is not yet published. Only "+clientid+" may publish pages.\
+           The current version is accessible at <ul><li><a style='word-wrap:break-word;' href='"+location+"'>"+location+"</a></li></ul>"
+  }
+}
+
 function update(request){
   var updateurl = "http://api.sofiajs.com/update";
   var geturl = $.ajax({
@@ -59,7 +77,12 @@ function update(request){
     contentType: "application/json; charset=utf-8",
     success:function(data, textStatus, XMLHttpRequest){
       ipc("location",data["location"]);
-      ipc("notice",success);
+      if(data["published"]=="yes"){
+        ipc("notice",published(request["location"]));
+      }else{
+        ipc("notice",pending(request["clientid"],data["location"]));
+      }
+      
     },
     error:function(jqXHR, textStatus, errorThrown){
       ipc("notice",failure);
