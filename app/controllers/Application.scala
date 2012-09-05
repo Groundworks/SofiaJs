@@ -279,7 +279,7 @@ object Application extends Controller {
           (json \ "page_content").asOpt[JsObject].map{ x:JsObject => 
             Json.stringify(x)
           }.map{ content => 
-            val version = "#!sofiajs/" + pageHash(content)
+            val version = "!sofiajs/" + pageHash(content)
             val updated = location + version
             var published = "no"
             println("Update Location: " + updated)
@@ -302,7 +302,7 @@ object Application extends Controller {
               Logger.debug("Anonymous Update Not Published")
             }
             Created(
-              jsonify("response"->"ok","location"-> updated, "published"->published)
+              jsonify("response"->"ok","location"-> version, "version"->version, "published"->published)
             ).withHeaders("Location" -> updated )
           }.getOrElse{BadRequest("Need to Authenticate")}
         }.getOrElse{BadRequest("Client ID Needed")}

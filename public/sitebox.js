@@ -146,7 +146,7 @@ var handlers = {
     ipc("oauth",m);
   },
   "location":function(location){
-    window.location.href=location;
+    window.location.hash=location;
   }
 };
 
